@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grade 4 & 5 Canada Geography Hub: Map, Memory Tricks & Practice</title>
+  <style>
+    :root {
+      --primary: #c51d24;
+      --primary-dark: #8c1015;
+      --secondary: #1d70b8;
+      --secondary-dark: #144e82;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+      --accent: #f59e0b;
+      --success: #16a34a;
+      --danger: #dc2626;
+
+      /* Distinct colors for every province & territory */
+      --c-yt: #818cf8;
+      --c-nt: #6366f1;
+      --c-nu: #4338ca;
+      --c-bc: #10b981;
+      --c-ab: #34d399;
+      --c-sk: #fbbf24;
+      --c-mb: #f59e0b;
+      --c-on: #fb923c;
+      --c-qc: #38bdf8;
+      --c-nb: #f43f5e;
+      --c-ns: #e11d48;
+      --c-pe: #ec4899;
+      --c-nl: #a855f7;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    header h1 { margin: 0 0 4px 0; font-size: 1.8rem; }
+    header p { margin: 0; opacity: 0.95; font-size: 0.95rem; }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      background: #ffffff;
+      padding: 10px 15px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .nav-btn {
+      border: none;
+      background: transparent;
+      padding: 8px 16px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 9999px;
+      cursor: pointer;
+      color: #64748b;
+      transition: all 0.2s ease;
+    }
+    .nav-btn.active, .nav-btn:hover {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 22px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    h2 { color: var(--primary-dark); margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+    h3 { margin-top: 0; color: #334155; }
+
+    /* Interactive Map Layout */
+    .map-container { display: flex; flex-direction: column; align-items: center; position: relative; }
+    .svg-wrapper {
+      width: 100%;
+      max-width: 900px;
+      background: #e0f2fe;
+      border: 2px solid #bae6fd;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    svg.canada-map { width: 100%; height: auto; display: block; }
+    .region {
+      cursor: pointer;
+      transition: all 0.25s ease;
+      stroke: #ffffff;
+      stroke-width: 1.5;
+    }
+    .region:hover {
+      filter: brightness(1.22) drop-shadow(0 0 6px rgba(0,0,0,0.4));
+      stroke: #0f172a;
+      stroke-width: 2.5;
+    }
+    .region.highlighted {
+      stroke: #facc15 !important;
+      stroke-width: 3.5 !important;
+      filter: brightness(1.15);
+    }
+
+    /* Individual Region Coloring */
+    #path-YT { fill: var(--c-yt); }
+    #path-NT { fill: var(--c-nt); }
+    #path-NU { fill: var(--c-nu); }
+    #path-BC { fill: var(--c-bc); }
+    #path-AB { fill: var(--c-ab); }
+    #path-SK { fill: var(--c-sk); }
+    #path-MB { fill: var(--c-mb); }
+    #path-ON { fill: var(--c-on); }
+    #path-QC { fill: var(--c-qc); }
+    #path-NB { fill: var(--c-nb); }
+    #path-NS { fill: var(--c-ns); }
+    #path-PE { fill: var(--c-pe); }
+    #path-NL { fill: var(--c-nl); }
+
+    .map-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.95);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      z-index: 200;
+    }
+
+    .ocean-label {
+      font-weight: 800;
+      font-size: 13px;
+      fill: #0369a1;
+      letter-spacing: 2px;
+      user-select: none;
+    }
+    .ocean-tag {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #7dd3fc;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    .info-panel {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      border-left: 5px solid var(--secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* Memory Tricks Cards */
+    .mnemonic-card {
+      background: #fffbeb;
+      border: 2px solid #fde68a;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .mnemonic-card h4 { margin: 0 0 6px 0; color: #b45309; font-size: 1.1rem; }
+
+    .trick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .trick-box {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      border-left: 4px solid var(--primary);
+    }
+    .trick-box strong { color: var(--primary-dark); }
+
+    /* Interactive Practice Forms */
+    .practice-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+    }
+    select, input[type="text"], input[type="number"] {
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--secondary-dark); }
+    .btn-outline {
+      background: white;
+      color: var(--secondary);
+      border: 2px solid var(--secondary);
+    }
+    .btn-outline:hover { background: #e0f2fe; }
+
+    /* Density Simulator */
+    .density-stage {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+    .density-box-wrap {
+      flex: 1;
+      min-width: 220px;
+      max-width: 300px;
+      text-align: center;
+    }
+    .density-visual-box {
+      width: 100%;
+      height: 150px;
+      border: 2px dashed #94a3b8;
+      background: white;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .density-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      position: absolute;
+    }
+
+    /* Quiz styling */
+    .quiz-card {
+      margin-bottom: 16px;
+      padding: 14px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border-left: 4px solid var(--secondary);
+    }
+    .quiz-option {
+      display: block;
+      margin: 6px 0;
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .quiz-option:hover { background: #f1f5f9; }
+    .status-msg { font-weight: bold; margin-top: 6px; display: none; }
+    .status-msg.correct { color: var(--success); }
+    .status-msg.incorrect { color: var(--danger); }
+
+    /* Printable Page Tables */
+    .printable-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    .printable-table th, .printable-table td {
+      border: 1px solid #cbd5e1;
+      padding: 8px;
+      text-align: left;
+    }
+    .printable-table th { background: #f1f5f9; }
+
+    @media print {
+      body { background: white; }
+      nav, header, button, .svg-wrapper, .map-tooltip, .density-stage { display: none !important; }
+      .tab-content { display: none !important; }
+      #printable-tab { display: block !important; }
+      .card { box-shadow: none; border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🇨🇦 Canada Geography & Memory Lab</h1>
+    <p>Ontario Curriculum (Grades 4 & 5) • Regions, Capitals, Compass Directions & Population Density</p>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" onclick="switchTab('map-tab')">🗺️ Interactive Map</button>
+    <button class="nav-btn" onclick="switchTab('mnemonics-tab')">🧠 Memory Tricks & Rhymes</button>
+    <button class="nav-btn" onclick="switchTab('practice-tab')">✍️ Student Practice</button>
+    <button class="nav-btn" onclick="switchTab('quiz-tab')">📝 Interactive Quiz</button>
+    <button class="nav-btn" onclick="switchTab('printable-tab')">🖨️ Printable Worksheets</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: INTERACTIVE MAP -->
+    <div id="map-tab" class="tab-content active">
+      <div class="card map-container">
+        <h2>Canada Region Explorer (Hover & Click)</h2>
+        <p>Hover over any province or territory to see its unique color and details. Click any area to focus on its facts!</p>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+          <span class="ocean-tag">🌊 Pacific Ocean (West)</span>
+          <span class="ocean-tag">🧊 Arctic Ocean (North)</span>
+          <span class="ocean-tag">🌊 Atlantic Ocean (East)</span>
+          <span class="ocean-tag">🇺🇸 United States (South)</span>
+        </div>
+
+        <div class="svg-wrapper" id="svg-host">
+          <div id="tooltip" class="map-tooltip"></div>
+          <svg class="canada-map" viewBox="0 0 1000 680" id="canada-svg">
+            <text x="500" y="45" text-anchor="middle" class="ocean-label">ARCTIC OCEAN (NORTH)</text>
+            <text x="35" y="420" class="ocean-label" transform="rotate(-90 35,420)">PACIFIC OCEAN (WEST)</text>
+            <text x="890" y="400" class="ocean-label" transform="rotate(90 890,400)">ATLANTIC OCEAN (EAST)</text>
+
+            <!-- Vector Regions -->
+            <polygon id="path-YT" class="region" data-id="YT" points="105,95 185,130 155,270 95,255 105,95" />
+            <text x="135" y="190" fill="#fff" font-weight="bold" font-size="12" pointer-events="none">YT</text>
+
+            <polygon id="path-NT" class="region" data-id="NT" points="185,130 330,165 390,240 330,280 155,270" />
+            <text x="240" y="220" fill="#fff" font-weight="bold" font-size="13" pointer-events="none">NT</text>
+
+            <polygon id="path-NU" class="region" data-id="NU" points="330,165 520,70 660,160 560,250 510,340 390,240" />
+            <text x="460" y="210" fill="#fff" font-weight="bold" font-size="15" pointer-events="none">NU</text>
+
+            <polygon id="path-BC" class="region" data-id="BC" points="95,255 155,270 190,380 180,510 80,480 80,310" />
+            <text x="125" y="400" fill="#fff" font-weight="bold" font-size="14" pointer-events="none">BC</text>
+
+            <polygon id="path-AB" class="region" data-id="AB" points="155,270 235,270 235,490 180,510 190,380" />
+            <text x="195" y="400" fill="#fff" font-weight="bold" font-size="13" pointer-events="none">AB</text>
+
+            <polygon id="path-SK" class="region" data-id="SK" points="235,270 315,270 315,500 235,490" />
+            <text x="260" y="400" fill="#fff" font-weight="bold" font-size="13" pointer-events="none">SK</text>
+
+            <polygon id="path-MB" class="region" data-id="MB" points="315,270 390,285 435,410 405,510 315,500" />
+            <text x="350" y="405" fill="#fff" font-weight="bold" font-size="13" pointer-events="none">MB</text>
+
+            <polygon id="path-ON" class="region" data-id="ON" points="390,285 510,340 550,440 605,530 510,560 435,410" />
+            <text x="480" y="450" fill="#fff" font-weight="bold" font-size="14" pointer-events="none">ON</text>
+
+            <polygon id="path-QC" class="region" data-id="QC" points="510,340 560,250 670,300 755,340 705,480 605,530 550,440" />
+            <text x="615" y="420" fill="#fff" font-weight="bold" font-size="15" pointer-events="none">QC</text>
+
+            <polygon id="path-NL" class="region" data-id="NL" points="670,300 780,290 840,400 755,340" />
+            <text x="740" y="320" fill="#fff" font-weight="bold" font-size="12" pointer-events="none">NL</text>
+
+            <polygon id="path-NB" class="region" data-id="NB" points="710,485 765,480 750,530 710,515" />
+            <text x="725" y="505" fill="#fff" font-weight="bold" font-size="9" pointer-events="none">NB</text>
+
+            <polygon id="path-NS" class="region" data-id="NS" points="765,515 820,535 810,565 755,545" />
+            <text x="775" y="540" fill="#fff" font-weight="bold" font-size="9" pointer-events="none">NS</text>
+
+            <circle id="path-PE" class="region" data-id="PE" cx="770" cy="465" r="14" />
+            <text x="764" y="468" fill="#fff" font-weight="bold" font-size="9" pointer-events="none">PE</text>
+
+            <!-- Compass -->
+            <g transform="translate(880, 100)">
+              <circle cx="0" cy="0" r="38" fill="white" stroke="#0f172a" stroke-width="2"/>
+              <line x1="0" y1="-32" x2="0" y2="32" stroke="#dc2626" stroke-width="2"/>
+              <line x1="-32" y1="0" x2="32" y2="0" stroke="#0f172a" stroke-width="2"/>
+              <text x="0" y="-35" text-anchor="middle" font-weight="bold" fill="#dc2626" font-size="12">N</text>
+              <text x="0" y="45" text-anchor="middle" font-weight="bold" fill="#0f172a" font-size="12">S</text>
+              <text x="42" y="4" text-anchor="middle" font-weight="bold" fill="#0f172a" font-size="12">E</text>
+              <text x="-42" y="4" text-anchor="middle" font-weight="bold" fill="#0f172a" font-size="12">W</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="info-panel" id="focus-panel">
+          <div>
+            <span id="selected-type" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; color: #64748b; font-weight: bold;">Click any Province / Territory</span>
+            <h3 id="selected-name" style="margin: 2px 0;">Interactive Map Ready</h3>
+            <p id="selected-detail" style="margin: 2px 0; color: #475569;">Hover over or click any province or territory above to see its facts.</p>
+          </div>
+          <button class="btn btn-outline" onclick="resetHighlight()">Clear Selection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: MEMORY TRICKS -->
+    <div id="mnemonics-tab" class="tab-content">
+      <div class="card">
+        <h2>🧠 Best Memory Tricks for 4th Graders</h2>
+        <p>Fourth graders remember geography best when using **West-to-East order**, **catchy word associations**, and **silly pictures**!</p>
+
+        <!-- Trick 1: Compass -->
+        <div class="mnemonic-card">
+          <h4>🧭 1. The Clockwise Compass Trick</h4>
+          <p style="margin: 0; font-size: 1.05rem;"><strong>N - E - S - W</strong> → <em>"<strong>N</strong>ever <strong>E</strong>at <strong>S</strong>oggy <strong>W</strong>affles!"</em> or <em>"<strong>N</strong>ever <strong>E</strong>at <strong>S</strong>limy <strong>W</strong>orms!"</em></p>
+          <small>Go clockwise starting from the top: North (up), East (right), South (down), West (left).</small>
+        </div>
+
+        <!-- Trick 2: West to East Provinces -->
+        <div class="mnemonic-card">
+          <h4>🍁 2. West-to-East Province Order Mnemonic</h4>
+          <p style="margin: 0 0 6px 0;">Travel across Canada from the Pacific Ocean to Ontario:</p>
+          <div style="background: white; padding: 10px; border-radius: 6px; font-weight: bold; border-left: 4px solid var(--accent);">
+            <strong>B</strong>ritish Columbia • <strong>A</strong>lberta • <strong>S</strong>askatchewan • <strong>M</strong>anitoba • <strong>O</strong>ntario<br>
+            <span style="color: var(--primary);">"<strong>B</strong>ig <strong>A</strong>pples <strong>S</strong>mell <strong>M</strong>ighty <strong>O</strong>k!"</span>
+          </div>
+        </div>
+
+        <!-- Trick 3: Capital City Associations -->
+        <h3>💡 3. Silly Associations for Capital Cities</h3>
+        <p>Link the sound of the province to something memorable in the capital:</p>
+
+        <div class="trick-grid">
+          <div class="trick-box">
+            <strong>British Columbia → Victoria</strong><br>
+            <em>"Queen <strong>Victoria</strong> sailed to the <strong>British</strong> coast."</em>
+          </div>
+          <div class="trick-box">
+            <strong>Alberta → Edmonton</strong><br>
+            <em>"Albert's best friend is <strong>Ed</strong> (Ed-monton)!"</em>
+          </div>
+          <div class="trick-box">
+            <strong>Saskatchewan → Regina</strong><br>
+            <em>"<strong>Sasquatch</strong> had fun in <strong>Regina</strong>."</em>
+          </div>
+          <div class="trick-box">
+            <strong>Manitoba → Winnipeg</strong><br>
+            <em>"The <strong>Mani</strong>c <strong>Toby</strong> dog loves to <strong>Win</strong> (Winnipeg)!"</em>
+          </div>
+          <div class="trick-box">
+            <strong>Ontario → Toronto</strong><br>
+            <em>"<strong>On</strong> to <strong>Toron</strong>to!"</em>
+          </div>
+          <div class="trick-box">
+            <strong>Nunavut → Iqaluit</strong><br>
+            <em>"It's <strong>None-of-it</strong> (Nunavut) warm in an <strong>Igloo</strong> (Iqaluit)!"</em>
+          </div>
+          <div class="trick-box">
+            <strong>Yukon → Whitehorse</strong><br>
+            <em>"Ride <strong>You-can</strong> ride a <strong>White horse</strong> in the snow!"</em>
+          </div>
+          <div class="trick-box">
+            <strong>Northwest Territories → Yellowknife</strong><br>
+            <em>"Head <strong>Northwest</strong> with a shiny <strong>Yellow knife</strong>!"</em>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: PRACTICE -->
+    <div id="practice-tab" class="tab-content">
+      <div class="card">
+        <h2>✍️ Practice 1: Capital City & Abbreviation Matcher</h2>
+        <p>Select the correct capital city and type the 2-letter postal abbreviation:</p>
+        <div id="cap-practice-container"></div>
+        <button class="btn" onclick="evaluateCapitals()">Check Matching Answers</button>
+        <span id="cap-eval-msg" style="margin-left: 12px; font-weight: bold;"></span>
+      </div>
+
+      <div class="card">
+        <h2>🧭 Practice 2: Driving From Ontario</h2>
+        <p>Which direction would you drive if you left Ontario heading to these destinations?</p>
+        <div id="travel-practice-container"></div>
+        <button class="btn" onclick="evaluateTravel()">Verify Driving Directions</button>
+        <span id="travel-eval-msg" style="margin-left: 12px; font-weight: bold;"></span>
+      </div>
+
+      <div class="card">
+        <h2>👥 Practice 3: Population Density Simulator</h2>
+        <p>Population density measures how crowded an area is (People ÷ Land Size km²). Notice how spread out people are in Nunavut vs. crowded in PEI:</p>
+        <div class="density-stage">
+          <div class="density-box-wrap">
+            <strong>Nunavut (Low Density)</strong>
+            <p style="font-size:0.8rem; color:#64748b; margin:2px 0 6px;">0.02 people / km²</p>
+            <div class="density-visual-box" id="sim-low"></div>
+          </div>
+          <div class="density-box-wrap">
+            <strong>Saskatchewan (Medium Density)</strong>
+            <p style="font-size:0.8rem; color:#64748b; margin:2px 0 6px;">1.87 people / km²</p>
+            <div class="density-visual-box" id="sim-med"></div>
+          </div>
+          <div class="density-box-wrap">
+            <strong>Prince Edward Island (High Density)</strong>
+            <p style="font-size:0.8rem; color:#64748b; margin:2px 0 6px;">25.13 people / km²</p>
+            <div class="density-visual-box" id="sim-high"></div>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 15px;">
+          <button class="btn btn-outline" onclick="generateSimDots()">Randomize People Dots</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: QUIZ -->
+    <div id="quiz-tab" class="tab-content">
+      <div class="card">
+        <h2>📝 4th & 5th Grade Canada Knowledge Quiz</h2>
+        <p>Answer all 6 questions and submit to check your mastery!</p>
+
+        <div class="quiz-card" data-correct="C">
+          <p><strong>1. How many total provinces and territories are in Canada?</strong></p>
+          <label class="quiz-option"><input type="radio" name="q1" value="A"> 50 States</label>
+          <label class="quiz-option"><input type="radio" name="q1" value="B"> 12 Provinces and 2 Territories</label>
+          <label class="quiz-option"><input type="radio" name="q1" value="C"> 10 Provinces and 3 Territories</label>
+          <div class="status-msg"></div>
+        </div>
+
+        <div class="quiz-card" data-correct="B">
+          <p><strong>2. What is the capital city of British Columbia? (Remember Queen Victoria!)</strong></p>
+          <label class="quiz-option"><input type="radio" name="q2" value="A"> Vancouver</label>
+          <label class="quiz-option"><input type="radio" name="q2" value="B"> Victoria</label>
+          <label class="quiz-option"><input type="radio" name="q2" value="C"> Edmonton</label>
+          <div class="status-msg"></div>
+        </div>
+
+        <div class="quiz-card" data-correct="A">
+          <p><strong>3. Using the mnemonic "Never Eat Soggy Waffles", what direction is to your right?</strong></p>
+          <label class="quiz-option"><input type="radio" name="q3" value="A"> East (E)</label>
+          <label class="quiz-option"><input type="radio" name="q3" value="B"> West (W)</label>
+          <label class="quiz-option"><input type="radio" name="q3" value="C"> South (S)</label>
+          <div class="status-msg"></div>
+        </div>
+
+        <div class="quiz-card" data-correct="C">
+          <p><strong>4. If you leave Ontario to visit Alberta, which cardinal direction do you travel?</strong></p>
+          <label class="quiz-option"><input type="radio" name="q4" value="A"> North</label>
+          <label class="quiz-option"><input type="radio" name="q4" value="B"> East</label>
+          <label class="quiz-option"><input type="radio" name="q4" value="C"> West</label>
+          <div class="status-msg"></div>
+        </div>
+
+        <div class="quiz-card" data-correct="A">
+          <p><strong>5. Which Canadian province has the HIGHEST population density?</strong></p>
+          <label class="quiz-option"><input type="radio" name="q5" value="A"> Prince Edward Island (Smallest land, packed together)</label>
+          <label class="quiz-option"><input type="radio" name="q5" value="B"> Nunavut</label>
+          <label class="quiz-option"><input type="radio" name="q5" value="C"> Northwest Territories</label>
+          <div class="status-msg"></div>
+        </div>
+
+        <div class="quiz-card" data-correct="B">
+          <p><strong>6. What is the capital city of Nunavut? (Hint: Think "Igloo"!)</strong></p>
+          <label class="quiz-option"><input type="radio" name="q6" value="A"> Yellowknife</label>
+          <label class="quiz-option"><input type="radio" name="q6" value="B"> Iqaluit</label>
+          <label class="quiz-option"><input type="radio" name="q6" value="C"> Whitehorse</label>
+          <div class="status-msg"></div>
+        </div>
+
+        <button class="btn" style="font-size: 1.05rem; padding: 10px 20px;" onclick="checkAllQuiz()">Submit Quiz</button>
+        <div id="quiz-final-score" style="display:none; margin-top:15px; padding:15px; border-radius:8px; text-align:center; font-weight:bold;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 5: PRINTABLES -->
+    <div id="printable-tab" class="tab-content">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>🖨️️ Printable Student Worksheets</h2>
+          <button class="btn" onclick="window.print()">Print This Worksheet</button>
+        </div>
+        <p><strong>Student Name:</strong> ___________________________ &nbsp;&nbsp;&nbsp;&nbsp; <strong>Date:</strong> ___________________________</p>
+
+        <h3>Part 1: Canada's 10 Provinces & 3 Territories Table</h3>
+        <table class="printable-table">
+          <thead>
+            <tr>
+              <th>Province / Territory</th>
+              <th>Capital City</th>
+              <th>Abbreviation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>British Columbia</td><td></td><td></td></tr>
+            <tr><td>Alberta</td><td></td><td></td></tr>
+            <tr><td>Saskatchewan</td><td></td><td></td></tr>
+            <tr><td>Manitoba</td><td></td><td></td></tr>
+            <tr><td>Ontario</td><td></td><td></td></tr>
+            <tr><td>Quebec</td><td></td><td></td></tr>
+            <tr><td>New Brunswick</td><td></td><td></td></tr>
+            <tr><td>Nova Scotia</td><td></td><td></td></tr>
+            <tr><td>Prince Edward Island</td><td></td><td></td></tr>
+            <tr><td>Newfoundland and Labrador</td><td></td><td></td></tr>
+            <tr><td>Yukon</td><td></td><td></td></tr>
+            <tr><td>Northwest Territories</td><td></td><td></td></tr>
+            <tr><td>Nunavut</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 25px;">Part 2: Cardinal Directions from Ontario</h3>
+        <table class="printable-table">
+          <thead>
+            <tr>
+              <th>Destination</th>
+              <th>Direction from Ontario (N, E, S, or W)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Quebec (QC)</td><td></td></tr>
+            <tr><td>Manitoba (MB)</td><td></td></tr>
+            <tr><td>Nunavut (NU)</td><td></td></tr>
+            <tr><td>British Columbia (BC)</td><td></td></tr>
+            <tr><td>Nova Scotia (NS)</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // DATA SOURCE (FROM LESSON SHEETS 1, 2, 3)
+    const regions = {
+      YT: { name: "Yukon", type: "Territory", capital: "Whitehorse", abbr: "YT", pop: "35,874", area: "474,712 km²", density: "0.08 / km²" },
+      NT: { name: "Northwest Territories", type: "Territory", capital: "Yellowknife", abbr: "NT", pop: "41,786", area: "1,143,793 km²", density: "0.04 / km²" },
+      NU: { name: "Nunavut", type: "Territory", capital: "Iqaluit", abbr: "NU", pop: "35,944", area: "1,877,778 km²", density: "0.02 / km²" },
+      BC: { name: "British Columbia", type: "Province", capital: "Victoria", abbr: "BC", pop: "4,648,055", area: "922,503 km²", density: "5.04 / km²" },
+      AB: { name: "Alberta", type: "Province", capital: "Edmonton", abbr: "AB", pop: "4,067,175", area: "640,330 km²", density: "6.35 / km²" },
+      SK: { name: "Saskatchewan", type: "Province", capital: "Regina", abbr: "SK", pop: "1,098,352", area: "588,243 km²", density: "1.87 / km²" },
+      MB: { name: "Manitoba", type: "Province", capital: "Winnipeg", abbr: "MB", pop: "1,278,365", area: "552,370 km²", density: "2.31 / km²" },
+      ON: { name: "Ontario", type: "Province", capital: "Toronto", abbr: "ON", pop: "13,448,494", area: "908,699 km²", density: "14.80 / km²" },
+      QC: { name: "Quebec", type: "Province", capital: "Quebec City", abbr: "QC", pop: "8,164,361", area: "1,356,625 km²", density: "6.02 / km²" },
+      NB: { name: "New Brunswick", type: "Province", capital: "Fredericton", abbr: "NB", pop: "747,101", area: "71,388 km²", density: "10.47 / km²" },
+      NS: { name: "Nova Scotia", type: "Province", capital: "Halifax", abbr: "NS", pop: "923,598", area: "52,942 km²", density: "17.45 / km²" },
+      PE: { name: "Prince Edward Island", type: "Province", capital: "Charlottetown", abbr: "PE", pop: "142,907", area: "5,686 km²", density: "25.13 / km²" },
+      NL: { name: "Newfoundland and Labrador", type: "Province", capital: "St. John's", abbr: "NL", pop: "519,716", area: "370,514 km²", density: "1.40 / km²" }
+    };
+
+    // TAB NAVIGATION
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // MAP INTERACTION
+    const tooltip = document.getElementById("tooltip");
+    const svgHost = document.getElementById("svg-host");
+    const focusType = document.getElementById("selected-type");
+    const focusName = document.getElementById("selected-name");
+    const focusDetail = document.getElementById("selected-detail");
+
+    document.querySelectorAll(".region").forEach(elem => {
+      const id = elem.getAttribute("data-id");
+      const d = regions[id];
+
+      elem.addEventListener("mouseenter", (e) => {
+        tooltip.style.display = "block";
+        tooltip.innerHTML = `<strong>${d.name} (${d.abbr})</strong><br>Capital: ${d.capital}<br>Density: ${d.density}`;
+      });
+
+      elem.addEventListener("mousemove", (e) => {
+        const rect = svgHost.getBoundingClientRect();
+        tooltip.style.left = (e.clientX - rect.left + 15) + "px";
+        tooltip.style.top = (e.clientY - rect.top + 15) + "px";
+      });
+
+      elem.addEventListener("mouseleave", () => {
+        tooltip.style.display = "none";
+      });
+
+      elem.addEventListener("click", () => {
+        highlightRegion(id);
+      });
+    });
+
+    function highlightRegion(id) {
+      document.querySelectorAll(".region").forEach(r => r.classList.remove("highlighted"));
+      const target = document.getElementById("path-" + id);
+      if (target) target.classList.add("highlighted");
+
+      const d = regions[id];
+      focusType.textContent = `${d.type} • ${d.abbr}`;
+      focusName.textContent = d.name;
+      focusDetail.innerHTML = `<strong>Capital City:</strong> ${d.capital} &nbsp;|&nbsp; <strong>Population:</strong> ${d.pop} &nbsp;|&nbsp; <strong>Density:</strong> ${d.density}`;
+    }
+
+    function resetHighlight() {
+      document.querySelectorAll(".region").forEach(r => r.classList.remove("highlighted"));
+      focusType.textContent = "Click any Province / Territory";
+      focusName.textContent = "Interactive Map Ready";
+      focusDetail.textContent = "Hover over or click any province or territory above to see its facts.";
+    }
+
+    // PRACTICE 1 BUILDER
+    const capList = ["Victoria", "Edmonton", "Regina", "Winnipeg", "Toronto", "Quebec City", "Fredericton", "Halifax", "Charlottetown", "St. John's", "Whitehorse", "Yellowknife", "Iqaluit"].sort();
+    const practiceKeys = ["BC", "AB", "SK", "MB", "ON", "QC", "PE", "NU"];
+    const capContainer = document.getElementById("cap-practice-container");
+
+    practiceKeys.forEach(k => {
+      const reg = regions[k];
+      const div = document.createElement("div");
+      div.className = "practice-row";
+      div.innerHTML = `
+        <span style="width: 200px; font-weight: 600;">${reg.name}:</span>
+        <label>Capital: 
+          <select id="sel-cap-${k}">
+            <option value="">Choose Capital...</option>
+            ${capList.map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </label>
+        <label>Abbreviation: 
+          <input type="text" id="inp-abbr-${k}" placeholder="e.g. ${k}" maxlength="2" style="width:70px; text-transform:uppercase;">
+        </label>
+        <span id="fb-cap-${k}" style="font-weight: bold; margin-left:8px;"></span>
+      `;
+      capContainer.appendChild(div);
+    });
+
+    function evaluateCapitals() {
+      let count = 0;
+      practiceKeys.forEach(k => {
+        const reg = regions[k];
+        const userCap = document.getElementById(`sel-cap-${k}`).value;
+        const userAbbr = document.getElementById(`inp-abbr-${k}`).value.trim().toUpperCase();
+        const fb = document.getElementById(`fb-cap-${k}`);
+
+        if (userCap === reg.capital && userAbbr === reg.abbr) {
+          fb.textContent = "✓ Correct!";
+          fb.style.color = "var(--success)";
+          count++;
+        } else {
+          fb.textContent = `✗ (${reg.capital}, ${reg.abbr})`;
+          fb.style.color = "var(--danger)";
+        }
+      });
+      document.getElementById("cap-eval-msg").textContent = `Score: ${count} / ${practiceKeys.length}`;
+    }
+
+    // PRACTICE 2 BUILDER
+    const travelList = [
+      { dest: "Quebec (QC)", ans: "East" },
+      { dest: "British Columbia (BC)", ans: "West" },
+      { dest: "Nunavut (NU)", ans: "North" },
+      { dest: "Saskatchewan (SK)", ans: "West" },
+      { dest: "Nova Scotia (NS)", ans: "East" }
+    ];
+    const travelContainer = document.getElementById("travel-practice-container");
+
+    travelList.forEach((t, i) => {
+      const div = document.createElement("div");
+      div.className = "practice-row";
+      div.innerHTML = `
+        <span style="width: 250px;">From <strong>Ontario</strong> to <strong>${t.dest}</strong>:</span>
+        <select id="sel-travel-${i}">
+          <option value="">Select Direction...</option>
+          <option value="North">North</option>
+          <option value="East">East</option>
+          <option value="South">South</option>
+          <option value="West">West</option>
+        </select>
+        <span id="fb-travel-${i}" style="font-weight: bold; margin-left:8px;"></span>
+      `;
+      travelContainer.appendChild(div);
+    });
+
+    function evaluateTravel() {
+      let score = 0;
+      travelList.forEach((t, i) => {
+        const val = document.getElementById(`sel-travel-${i}`).value;
+        const fb = document.getElementById(`fb-travel-${i}`);
+        if (val === t.ans) {
+          fb.textContent = "✓ Correct";
+          fb.style.color = "var(--success)";
+          score++;
+        } else {
+          fb.textContent = `✗ Heading is ${t.ans}`;
+          fb.style.color = "var(--danger)";
+        }
+      });
+      document.getElementById("travel-eval-msg").textContent = `Score: ${score} / ${travelList.length}`;
+    }
+
+    // PRACTICE 3 DENSITY DOTS
+    function populateDots(id, total) {
+      const el = document.getElementById(id);
+      el.innerHTML = "";
+      for (let i = 0; i < total; i++) {
+        const dot = document.createElement("div");
+        dot.className = "density-dot";
+        dot.style.top = Math.random() * 135 + "px";
+        dot.style.left = Math.random() * 95 + "%";
+        el.appendChild(dot);
+      }
+    }
+    function generateSimDots() {
+      populateDots("sim-low", 3);
+      populateDots("sim-med", 20);
+      populateDots("sim-high", 80);
+    }
+    generateSimDots();
+
+    // QUIZ EVALUATION
+    function checkAllQuiz() {
+      const cards = document.querySelectorAll(".quiz-card");
+      let correct = 0;
+      cards.forEach(card => {
+        const target = card.getAttribute("data-correct");
+        const sel = card.querySelector("input[type=radio]:checked");
+        const msg = card.querySelector(".status-msg");
+        msg.style.display = "block";
+        if (sel && sel.value === target) {
+          correct++;
+          msg.textContent = "✓ Great Job!";
+          msg.className = "status-msg correct";
+        } else {
+          msg.textContent = `✗ Not quite. The correct answer was (${target}).`;
+          msg.className = "status-msg incorrect";
+        }
+      });
+
+      const fs = document.getElementById("quiz-final-score");
+      fs.style.display = "block";
+      if (correct === cards.length) {
+        fs.style.background = "#dcfce7";
+        fs.style.color = "#15803d";
+        fs.textContent = `🎉 Awesome! You scored ${correct} / ${cards.length}! You're ready for the test!`;
+      } else {
+        fs.style.background = "#fef3c7";
+        fs.style.color = "#b45309";
+        fs.textContent = `Good try! You got ${correct} / ${cards.length}. Review the memory tricks and try again!`;
+      }
+    }
+  </script>
+</body>
+</html>

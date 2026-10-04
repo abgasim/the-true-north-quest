@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canada Social Studies Practice Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #d92323;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #555;
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed #e0e0e0;
+        }
+
+        .question {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button.opt-btn {
+            background-color: #eef2f7;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        button.opt-btn:hover {
+            background-color: #dbeaff;
+            border-color: #3b82f6;
+        }
+
+        button.correct {
+            background-color: #d1fae5 !important;
+            border-color: #10b981 !important;
+            color: #065f46;
+            font-weight: bold;
+        }
+
+        button.incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+            color: #991b1b;
+        }
+
+        .feedback {
+            margin-top: 10px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        .score-board {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #1e3a8a;
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 20px auto 0;
+            background-color: #d92323;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .reset-btn:hover {
+            background-color: #b91c1c;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>🇨🇦 Canada Social Studies Practice</h1>
+        <h2>Grade 4 & 5 Interactive Quiz</h2>
+
+        <div id="quiz-container"></div>
+
+        <div class="score-board">
+            Score: <span id="score">0</span> / <span id="total">0</span>
+        </div>
+
+        <button class="reset-btn" onclick="initQuiz()">Restart Practice Game</button>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                q: "How many territories does Canada have?",
+                options: ["3", "5", "10", "13"],
+                answer: 0,
+                explanation: "Canada has 3 territories: Yukon, Northwest Territories, and Nunavut."
+            },
+            {
+                q: "How many provinces are in Canada?",
+                options: ["8", "10", "12", "13"],
+                answer: 1,
+                explanation: "Canada is made up of 10 provinces."
+            },
+            {
+                q: "What is the capital city of Canada?",
+                options: ["Toronto", "Vancouver", "Ottawa", "Montreal"],
+                answer: 2,
+                explanation: "Ottawa is the national capital of Canada."
+            },
+            {
+                q: "Which physical region features ancient rock, boreal forests, and thousands of lakes?",
+                options: ["Interior Plains", "Canadian Shield", "Cordillera", "Appalachian Region"],
+                answer: 1,
+                explanation: "The Canadian Shield covers vast areas with ancient rock, lakes, and forests."
+            },
+            {
+                q: "Which ocean borders Canada to the west?",
+                options: ["Atlantic Ocean", "Arctic Ocean", "Pacific Ocean", "Indian Ocean"],
+                answer: 2,
+                explanation: "The Pacific Ocean lies along Canada's western coast."
+            },
+            {
+                q: "The Cordillera region is known for its:",
+                options: ["Flat prairies", "Western mountains and valleys", "Tundra and permafrost", "Atlantic coastline"],
+                answer: 1,
+                explanation: "The Cordillera features impressive western mountain ranges and deep valleys."
+            }
+        ];
+
+        let currentScore = 0;
+
+        function initQuiz() {
+            currentScore = 0;
+            document.getElementById('score').innerText = currentScore;
+            document.getElementById('total').innerText = quizData.length;
+
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+
+            quizData.forEach((item, qIdx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'section';
+
+                let html = `<div class="question">Q${qIdx + 1}: ${item.q}</div>`;
+                html += `<div class="options">`;
+                item.options.forEach((opt, oIdx) => {
+                    html += `<button class="opt-btn" onclick="checkAnswer(${qIdx}, ${oIdx}, this)">${opt}</button>`;
+                });
+                html += `</div>`;
+                html += `<div class="feedback" id="fb-${qIdx}"></div>`;
+
+                qDiv.innerHTML = html;
+                container.appendChild(qDiv);
+            });
+        }
+
+        function checkAnswer(qIdx, selectedIdx, btn) {
+            const fb = document.getElementById(`fb-${qIdx}`);
+            const parent = btn.parentElement;
+            const buttons = parent.querySelectorAll('button');
+
+            buttons.forEach(b => b.disabled = true);
+
+            const correctIdx = quizData[qIdx].answer;
+
+            if (selectedIdx === correctIdx) {
+                btn.classList.add('correct');
+                fb.style.color = '#10b981';
+                fb.innerText = 'Correct! ' + quizData[qIdx].explanation;
+                currentScore++;
+            } else {
+                btn.classList.add('incorrect');
+                buttons[correctIdx].classList.add('correct');
+                fb.style.color = '#ef4444';
+                fb.innerText = 'Incorrect. ' + quizData[qIdx].explanation;
+            }
+
+            document.getElementById('score').innerText = currentScore;
+        }
+
+        initQuiz();
+    </script>
+
+</body>
+
+</html>

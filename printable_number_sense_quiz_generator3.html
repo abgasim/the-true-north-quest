@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Sense Quiz Generator (Printable) | የቁጥሮች ግንዛቤ ፈተና ማመንጫ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Noto+Sans+Ethiopic:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Nunito', 'Noto Sans Ethiopic', sans-serif;
+      background-color: #f1f5f9;
+    }
+    .handwriting {
+      font-family: 'Patrick Hand', 'Noto Sans Ethiopic', cursive;
+    }
+    .print-sheet {
+      background-color: #ffffff;
+      width: 100%;
+      max-width: 850px;
+      min-height: 1100px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Print settings */
+    @media print {
+      body {
+        background-color: #ffffff;
+        padding: 0;
+        margin: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0.4in 0.5in !important;
+        margin: 0 !important;
+      }
+      @page {
+        size: letter portrait;
+        margin: 0.35in;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-3 sm:p-6 transition-all">
+
+  <!-- Interactive Controls Bar (Hidden during print) -->
+  <header class="w-full max-w-[850px] bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-6 flex flex-wrap items-center justify-between gap-3 no-print">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+        <span>📄</span> <span id="appTitle">Printable Number Sense Quiz</span>
+      </h1>
+      <p class="text-xs text-slate-500 font-medium" id="appSub">
+        Generate fresh worksheets, toggle answer key, switch language, and print cleanly.
+      </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Randomize -->
+      <button onclick="generateRandom()" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5">
+        <span>🎲</span> <span id="btnRandom">Generate Random</span>
+      </button>
+
+      <!-- Original Quiz Preset -->
+      <button onclick="loadOriginalQuiz()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 flex items-center gap-1.5">
+        <span>📄</span> <span id="btnOriginal">Original Quiz</span>
+      </button>
+
+      <!-- Toggle Answer Key -->
+      <button onclick="toggleAnswerKey()" id="btnKey" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 flex items-center gap-1.5">
+        <span>🔑</span> <span id="btnKeyText">Show Answers</span>
+      </button>
+
+      <!-- Bilingual Switcher -->
+      <button onclick="toggleLang()" class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition">
+        🌐 <span id="langBtnText">አማርኛ</span>
+      </button>
+
+      <!-- Print Button -->
+      <button onclick="window.print()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition active:scale-95 flex items-center gap-1.5">
+        <span>🖨️️</span> <span id="btnPrint">Print Worksheet</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- The Printable Paper Document -->
+  <main class="print-sheet border border-slate-200 rounded-2xl p-8 sm:p-12 relative flex flex-col justify-between" id="worksheetDoc">
+
+    <!-- Document Header -->
+    <div class="border-b-2 border-slate-900 pb-5 mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-xs uppercase font-extrabold text-slate-400 tracking-wider" id="gradeLabel">Mathematics Assessment | Grade 4/5</div>
+          <h2 class="text-3xl font-black text-slate-900 tracking-tight" id="paperTitle">Number Sense Quiz</h2>
+        </div>
+        <div class="text-right">
+          <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" id="scoreLabel">Score</div>
+          <div class="text-2xl font-black text-slate-900 font-mono tracking-tight" id="scoreValue">______ / 20</div>
+        </div>
+      </div>
+
+      <!-- Student Credentials Line -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm font-bold text-slate-700 pt-2">
+        <div class="flex items-end gap-2">
+          <span id="lblName">Name:</span>
+          <div class="flex-1 border-b border-slate-500 pb-0.5 handwriting text-lg text-blue-700"></div>
+        </div>
+        <div class="flex items-end gap-2">
+          <span id="lblDate">Date:</span>
+          <div class="flex-1 border-b border-slate-500 pb-0.5 handwriting text-lg text-blue-700"></div>
+        </div>
+        <div class="flex items-end gap-2">
+          <span id="lblParent">Parent Signature:</span>
+          <div class="flex-1 border-b border-slate-500 pb-0.5"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions Container -->
+    <div class="space-y-6 text-slate-900 text-sm sm:text-base">
+
+      <!-- Question 1: Digit Value -->
+      <div>
+        <div class="font-extrabold text-slate-900 mb-2 flex items-center justify-between">
+          <span id="q1_title">1. What does the highlighted digit stand for in the number?</span>
+          <span class="text-xs font-bold text-slate-400 font-mono">[3 pts]</span>
+        </div>
+        <div class="grid grid-cols-3 gap-4 pt-1" id="q1_container">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Question 2: Number Words for Numerals -->
+      <div>
+        <div class="font-extrabold text-slate-900 mb-2 flex items-center justify-between">
+          <span id="q2_title">2. Write the number words for the numerals on the signs.</span>
+          <span class="text-xs font-bold text-slate-400 font-mono">[2 pts]</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="q2_container">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Question 3: Base-10 Blocks -->
+      <div>
+        <div class="font-extrabold text-slate-900 mb-2 flex items-center justify-between">
+          <span id="q3_title">3. Write the number in expanded form, then in written form.</span>
+          <span class="text-xs font-bold text-slate-400 font-mono">[3 pts]</span>
+        </div>
+        <div class="border border-slate-300 rounded-xl p-4 bg-slate-50/50" id="q3_container">
+          <!-- Injected via JS with true 3D SVGs -->
+        </div>
+      </div>
+
+      <!-- Question 4: Expanded Form -->
+      <div>
+        <div class="font-extrabold text-slate-900 mb-2 flex items-center justify-between">
+          <span id="q4_title">4. Write the number in expanded form (using numbers).</span>
+          <span class="text-xs font-bold text-slate-400 font-mono">[3 pts]</span>
+        </div>
+        <div class="space-y-3" id="q4_container">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Question 5: Comparison (< or >) -->
+      <div>
+        <div class="font-extrabold text-slate-900 mb-2 flex items-center justify-between">
+          <span id="q5_title">5. Write &lt; (less than) or &gt; (greater than) in the box to make the statement true.</span>
+          <span class="text-xs font-bold text-slate-400 font-mono">[3 pts]</span>
+        </div>
+        <div class="grid grid-cols-3 gap-4" id="q5_container">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Question 6: Rounding to Nearest Thousand -->
+      <div>
+        <div class="font-extrabold text-slate-900 mb-2 flex items-center justify-between">
+          <span id="q6_title">6. Round the number to the nearest thousand:</span>
+          <span class="text-xs font-bold text-slate-400 font-mono">[4 pts]</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="q6_container">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Bonus Question: Triple Rounding -->
+      <div class="border-2 border-dashed border-slate-300 rounded-2xl p-4 bg-amber-50/40">
+        <div class="font-black text-slate-900 mb-2 flex items-center justify-between">
+          <span id="bonus_title">🌟 Bonus: Round the number to the nearest thousand, hundred, and ten.</span>
+          <span class="text-xs font-bold text-amber-700 font-mono">[2 Bonus pts]</span>
+        </div>
+        <div id="bonus_container">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Paper Footer -->
+    <div class="border-t border-slate-200 mt-8 pt-4 flex items-center justify-between text-xs text-slate-400 font-semibold">
+      <span id="footerCurriculum">Elementary Mathematics • Number Sense Curriculum</span>
+      <span>Page 1 of 1</span>
+    </div>
+
+  </main>
+
+  <script>
+    let showKey = false;
+    let currentLang = 'en';
+
+    // Original Quiz Data directly from your photos
+    const originalData = {
+      q1: [
+        { numStr: "152", targetIdx: 1, ans: "50" },
+        { numStr: "5508", targetIdx: 1, ans: "500" },
+        { numStr: "5391", targetIdx: 0, ans: "5000" }
+      ],
+      q2: [
+        { titleEn: "Score:", titleAm: "ውጤት፡", num: 46, ansEn: "forty-six", ansAm: "አርባ ስድስት" },
+        { titleEn: "House for Sale:", titleAm: "የሚሸጥ ቤት፡", num: 112, ansEn: "one hundred twelve", ansAm: "አንድ መቶ አስራ ሁለት" }
+      ],
+      q3: {
+        thousands: 7, hundreds: 1, tens: 9, ones: 8,
+        total: 7198,
+        writtenEn: "seven thousand one hundred ninety-eight",
+        writtenAm: "ሰባት ሺህ አንድ መቶ ዘጠና ስምንት"
+      },
+      q4: [
+        { num: 5183, ans: "5000 + 100 + 80 + 3" },
+        { num: 309, ans: "300 + 9" }
+      ],
+      q5: [
+        { left: 4075, right: 4005, ans: ">" },
+        { left: 8612, right: 8611, ans: ">" },
+        { left: 3845, right: 3855, ans: "<" }
+      ],
+      q6: [
+        { num: 4268, ans: "4000" },
+        { num: 1922, ans: "2000" },
+        { num: 958, ans: "1000" },
+        { num: 5177, ans: "5000" }
+      ],
+      bonus: {
+        num: 7642,
+        th: 8000,
+        h: 7600,
+        t: 7640
+      }
+    };
+
+    let activeData = JSON.parse(JSON.stringify(originalData));
+
+    // Pure localization strings (No language mixing)
+    const i18n = {
+      en: {
+        appTitle: "Printable Number Sense Quiz",
+        appSub: "Generate fresh worksheets, toggle answer key, switch language, and print cleanly.",
+        btnRandom: "Generate Random",
+        btnOriginal: "Original Quiz",
+        btnKeyShow: "Show Answers",
+        btnKeyHide: "Hide Answers",
+        btnPrint: "Print Worksheet",
+        langBtn: "አማርኛ",
+        gradeLabel: "Mathematics Assessment | Grade 4/5",
+        paperTitle: "Number Sense Quiz",
+        scoreLabel: "Score",
+        lblName: "Name:",
+        lblDate: "Date:",
+        lblParent: "Parent Signature:",
+        q1_title: "1. What does the highlighted digit stand for in the number?",
+        q2_title: "2. Write the number words for the numerals on the signs.",
+        q3_title: "3. Write the number in expanded form, then in written form.",
+        q4_title: "4. Write the number in expanded form (using numbers).",
+        q5_title: "5. Write < (less than) or > (greater than) in the box to make the statement true.",
+        q6_title: "6. Round the number to the nearest thousand:",
+        bonus_title: "🌟 Bonus: Round the number to the nearest thousand, hundred, and ten.",
+        thousandsLbl: "thousands",
+        hundredsLbl: "hundred",
+        tensLbl: "tens",
+        onesLbl: "ones",
+        writtenFormLbl: "Written form:",
+        footerCurriculum: "Elementary Mathematics • Number Sense Curriculum",
+        bonusTh: "Nearest Thousand:",
+        bonusH: "Nearest Hundred:",
+        bonusT: "Nearest Ten:"
+      },
+      am: {
+        appTitle: "የታተመ የቁጥሮች ግንዛቤ ፈተና ማመንጫ",
+        appSub: "ያልተገደቡ አዳዲስ የፈተና ወረቀቶችን ያመንጩ፣ መልሶችን ይመልከቱ እና በቀላሉ ያትሙ።",
+        btnRandom: "በዘፈቀደ ቁጥሮች",
+        btnOriginal: "ኦሪጅናል ፈተና",
+        btnKeyShow: "መልሶችን አሳይ",
+        btnKeyHide: "መልሶችን ደብቅ",
+        btnPrint: "ወረቀቱን አትም (Print)",
+        langBtn: "English",
+        gradeLabel: "የሂሳብ ምዘና ፈተና | ክፍል 4/5",
+        paperTitle: "የቁጥሮች ግንዛቤ ምዘና ፈተና",
+        scoreLabel: "ውጤት",
+        lblName: "ስም፡",
+        lblDate: "ቀን፡",
+        lblParent: "የወላጅ ፊርማ፡",
+        q1_title: "1. በቁጥሩ ውስጥ የተሰመረበት ዲጂት የሚወክለው የቦታ ዋጋ ስንት ነው?",
+        q2_title: "2. በምልክቶቹ ላይ የተጻፉትን ቁጥሮች በቃላት ጻፉ።",
+        q3_title: "3. ብሎኮቹን በመቁጠር ቁጥሩን በተዘረዘረ መልክ እና በቃላት ጻፉ።",
+        q4_title: "4. ቁጥሮቹን በተዘረዘረ የቁጥር መልክ ጻፉ።",
+        q5_title: "5. ዓረፍተ ነገሩ ትክክል እንዲሆን ባዶው ሳጥን ውስጥ < ወይም > ምልክት አስቀምጡ።",
+        q6_title: "6. ቁጥሮቹን ወደ ቅርብ ሺህ አጠጋጉ፡",
+        bonus_title: "🌟 ተጨማሪ ፈተና፡ ቁጥሩን ወደ ቅርብ ሺህ፣ መቶ እና አሥር አጠጋጉ።",
+        thousandsLbl: "ሺህ",
+        hundredsLbl: "መቶ",
+        tensLbl: "አሥር",
+        onesLbl: "አንድ",
+        writtenFormLbl: "በቃላት መልክ፡",
+        footerCurriculum: "የአንደኛ ደረጃ ሂሳብ ትምህርት • የቁጥሮች ግንዛቤ",
+        bonusTh: "ወደ ቅርብ ሺህ፡",
+        bonusH: "ወደ ቅርብ መቶ፡",
+        bonusT: "ወደ ቅርብ አሥር፡"
+      }
+    };
+
+    // Amharic Number Words Converter
+    function numberToAmharicWords(num) {
+      const units = ["", "አንድ", "ሁለት", "ሦስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"];
+      const teens = ["አሥር", "አስራ አንድ", "አስራ ሁለት", "አስራ ሦስት", "አስራ አራት", "አስራ አምስት", "አስራ ስድስት", "አስራ ሰባት", "አስራ ስምንት", "አስራ ዘጠኝ"];
+      const tens = ["", "", "ሃያ", "ሠላሳ", "አርባ", "ሃምሳ", "ስድሳ", "ሰባ", "ሰማንያ", "ዘጠና"];
+
+      if (num === 0) return "ዜሮ";
+      let parts = [];
+
+      // Thousands
+      if (num >= 1000) {
+        const th = Math.floor(num / 1000);
+        parts.push(numberToAmharicWords(th) + " ሺህ");
+        num %= 1000;
+      }
+
+      // Hundreds
+      if (num >= 100) {
+        const h = Math.floor(num / 100);
+        parts.push(units[h] + " መቶ");
+        num %= 100;
+      }
+
+      // Tens and Units
+      if (num >= 10 && num < 20) {
+        parts.push(teens[num - 10]);
+      } else if (num >= 20) {
+        const t = Math.floor(num / 10);
+        const u = num % 10;
+        if (u > 0) parts.push(tens[t] + " " + units[u]);
+        else parts.push(tens[t]);
+      } else if (num > 0) {
+        parts.push(units[num]);
+      }
+
+      return parts.join(" ");
+    }
+
+    // English Number Words Converter
+    function numberToWords(n) {
+      const units = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+      const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+      if (n === 0) return "zero";
+      if (n < 20) return units[n];
+      if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? "-" + units[n % 10] : "");
+      if (n < 1000) return units[Math.floor(n / 100)] + " hundred" + (n % 100 !== 0 ? " " + numberToWords(n % 100) : "");
+      if (n < 1000000) return numberToWords(Math.floor(n / 1000)) + " thousand" + (n % 1000 !== 0 ? " " + numberToWords(n % 1000) : "");
+      return n.toString();
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === 'en' ? 'am' : 'en';
+      document.getElementById('langBtnText').textContent = i18n[currentLang].langBtn;
+      document.getElementById('appTitle').textContent = i18n[currentLang].appTitle;
+      document.getElementById('appSub').textContent = i18n[currentLang].appSub;
+      document.getElementById('btnRandom').textContent = i18n[currentLang].btnRandom;
+      document.getElementById('btnOriginal').textContent = i18n[currentLang].btnOriginal;
+      document.getElementById('btnPrint').textContent = i18n[currentLang].btnPrint;
+      document.getElementById('gradeLabel').textContent = i18n[currentLang].gradeLabel;
+      document.getElementById('paperTitle').textContent = i18n[currentLang].paperTitle;
+      document.getElementById('scoreLabel').textContent = i18n[currentLang].scoreLabel;
+      document.getElementById('lblName').textContent = i18n[currentLang].lblName;
+      document.getElementById('lblDate').textContent = i18n[currentLang].lblDate;
+      document.getElementById('lblParent').textContent = i18n[currentLang].lblParent;
+      document.getElementById('q1_title').textContent = i18n[currentLang].q1_title;
+      document.getElementById('q2_title').textContent = i18n[currentLang].q2_title;
+      document.getElementById('q3_title').textContent = i18n[currentLang].q3_title;
+      document.getElementById('q4_title').textContent = i18n[currentLang].q4_title;
+      document.getElementById('q5_title').textContent = i18n[currentLang].q5_title;
+      document.getElementById('q6_title').textContent = i18n[currentLang].q6_title;
+      document.getElementById('bonus_title').textContent = i18n[currentLang].bonus_title;
+      document.getElementById('footerCurriculum').textContent = i18n[currentLang].footerCurriculum;
+      updateKeyBtnText();
+      renderAll();
+    }
+
+    function toggleAnswerKey() {
+      showKey = !showKey;
+      updateKeyBtnText();
+      renderAll();
+    }
+
+    function updateKeyBtnText() {
+      const btn = document.getElementById('btnKeyText');
+      btn.textContent = showKey ? i18n[currentLang].btnKeyHide : i18n[currentLang].btnKeyShow;
+    }
+
+    function loadOriginalQuiz() {
+      activeData = JSON.parse(JSON.stringify(originalData));
+      renderAll();
+    }
+
+    function generateRandom() {
+      // Q1: Place values
+      const q1 = [];
+      for (let i = 0; i < 3; i++) {
+        const randNum = Math.floor(Math.random() * 8999) + 1000;
+        const str = randNum.toString();
+        const targetIdx = Math.floor(Math.random() * 4);
+        const digitVal = parseInt(str[targetIdx], 10);
+        const weight = Math.pow(10, 3 - targetIdx);
+        q1.push({ numStr: str, targetIdx: targetIdx, ans: (digitVal * weight).toString() });
+      }
+
+      // Q2: Number words
+      const n2_1 = Math.floor(Math.random() * 80) + 15;
+      const n2_2 = Math.floor(Math.random() * 400) + 101;
+      const q2 = [
+        { titleEn: "Score:", titleAm: "ውጤት፡", num: n2_1, ansEn: numberToWords(n2_1), ansAm: numberToAmharicWords(n2_1) },
+        { titleEn: "House for Sale:", titleAm: "የሚሸጥ ቤት፡", num: n2_2, ansEn: numberToWords(n2_2), ansAm: numberToAmharicWords(n2_2) }
+      ];
+
+      // Q3: MAB Blocks
+      const th = Math.floor(Math.random() * 5) + 3;
+      const h = Math.floor(Math.random() * 4) + 1;
+      const t = Math.floor(Math.random() * 7) + 1;
+      const o = Math.floor(Math.random() * 8) + 1;
+      const total = th * 1000 + h * 100 + t * 10 + o;
+      const q3 = {
+        thousands: th, hundreds: h, tens: t, ones: o,
+        total: total,
+        writtenEn: numberToWords(total),
+        writtenAm: numberToAmharicWords(total)
+      };
+
+      // Q4: Expanded Form
+      const n4_1 = Math.floor(Math.random() * 8999) + 1000;
+      const s4_1 = n4_1.toString();
+      const ans4_1 = `${parseInt(s4_1[0])*1000} + ${parseInt(s4_1[1])*100} + ${parseInt(s4_1[2])*10} + ${parseInt(s4_1[3])}`;
+      
+      const n4_2 = (Math.floor(Math.random() * 8) + 1) * 100 + (Math.floor(Math.random() * 8) + 1);
+      const s4_2 = n4_2.toString();
+      const ans4_2 = `${parseInt(s4_2[0])*100} + ${parseInt(s4_2[2])}`;
+
+      const q4 = [
+        { num: n4_1, ans: ans4_1 },
+        { num: n4_2, ans: ans4_2 }
+      ];
+
+      // Q5: Comparison
+      const q5 = [];
+      for (let i = 0; i < 3; i++) {
+        const left = Math.floor(Math.random() * 8999) + 1000;
+        const diff = (Math.floor(Math.random() * 25) + 1) * (Math.random() > 0.5 ? 1 : -1);
+        const right = left + diff;
+        q5.push({ left, right, ans: left > right ? '>' : '<' });
+      }
+
+      // Q6: Rounding
+      const q6 = [];
+      for (let i = 0; i < 4; i++) {
+        const num = Math.floor(Math.random() * 8999) + 1000;
+        const ans = (Math.round(num / 1000) * 1000).toString();
+        q6.push({ num, ans });
+      }
+
+      // Bonus
+      const bNum = Math.floor(Math.random() * 8999) + 1000;
+      const bonus = {
+        num: bNum,
+        th: Math.round(bNum / 1000) * 1000,
+        h: Math.round(bNum / 100) * 100,
+        t: Math.round(bNum / 10) * 10
+      };
+
+      activeData = { q1, q2, q3, q4, q5, q6, bonus };
+      renderAll();
+    }
+
+    function renderAll() {
+      renderQ1();
+      renderQ2();
+      renderQ3();
+      renderQ4();
+      renderQ5();
+      renderQ6();
+      renderBonus();
+    }
+
+    // 1. Digit Stand For
+    function renderQ1() {
+      const container = document.getElementById('q1_container');
+      const letters = ['a', 'b', 'c'];
+      container.innerHTML = activeData.q1.map((item, idx) => {
+        const formatted = item.numStr.split('').map((c, i) => 
+          i === item.targetIdx ? `<span class="underline decoration-2 decoration-slate-900 font-extrabold text-blue-900">${c}</span>` : c
+        ).join('');
+
+        return `
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-500">${letters[idx]})</span>
+            <span class="font-mono font-bold text-base">${formatted}</span>
+            <div class="flex-1 border-b-2 border-slate-700 min-h-[26px] handwriting text-blue-700 text-lg font-bold pl-2">
+              ${showKey ? item.ans : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 2. Number Words
+    function renderQ2() {
+      const container = document.getElementById('q2_container');
+      const letters = ['a', 'b'];
+      container.innerHTML = activeData.q2.map((item, idx) => {
+        const title = currentLang === 'en' ? item.titleEn : item.titleAm;
+        const wordAns = currentLang === 'en' ? item.ansEn : item.ansAm;
+        return `
+          <div class="border-2 border-dashed border-slate-300 rounded-2xl p-3 flex flex-col justify-between bg-slate-50/40">
+            <div class="text-xs font-bold text-slate-600 uppercase">${letters[idx]}) ${title}</div>
+            <div class="text-3xl font-black font-mono text-slate-900 my-2 text-center">(${item.num})</div>
+            <div class="border-b-2 border-slate-700 min-h-[30px] handwriting text-blue-700 text-lg font-bold pl-2">
+              ${showKey ? wordAns : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- High-Quality 3D Isometric SVG Block Generators ---
+
+    // 1. Thousand Cube (True 3D isometric with engraved lines)
+    function get3DThousandCubeSVG() {
+      return `
+        <svg viewBox="0 0 54 54" class="w-11 h-11 inline-block drop-shadow-sm m-0.5">
+          <!-- Top Face -->
+          <polygon points="27,3 49,15 27,27 5,15" fill="#fde68a" stroke="#78350f" stroke-width="1.2" stroke-linejoin="round"/>
+          <!-- Top grid lines -->
+          <line x1="16" y1="9" x2="38" y2="21" stroke="#d97706" stroke-width="0.6"/>
+          <line x1="38" y1="9" x2="16" y2="21" stroke="#d97706" stroke-width="0.6"/>
+          
+          <!-- Front-Left Face -->
+          <polygon points="5,15 27,27 27,51 5,39" fill="#d97706" stroke="#78350f" stroke-width="1.2" stroke-linejoin="round"/>
+          <!-- Left lines -->
+          <line x1="5" y1="27" x2="27" y2="39" stroke="#92400e" stroke-width="0.6"/>
+          <line x1="16" y1="21" x2="16" y2="45" stroke="#92400e" stroke-width="0.6"/>
+
+          <!-- Front-Right Face -->
+          <polygon points="27,27 49,15 49,39 27,51" fill="#b45309" stroke="#78350f" stroke-width="1.2" stroke-linejoin="round"/>
+          <!-- Right lines -->
+          <line x1="27" y1="39" x2="49" y2="27" stroke="#78350f" stroke-width="0.6"/>
+          <line x1="38" y1="21" x2="38" y2="45" stroke="#78350f" stroke-width="0.6"/>
+        </svg>
+      `;
+    }
+
+    // 2. Hundred Flat (Crisp 10x10 grid)
+    function get100FlatSVG() {
+      let gridLines = '';
+      for (let i = 1; i < 10; i++) {
+        let pos = i * 4.4;
+        gridLines += `<line x1="${pos}" y1="0" x2="${pos}" y2="44" stroke="#1e3a8a" stroke-width="0.75" />`;
+        gridLines += `<line x1="0" y1="${pos}" x2="44" y2="${pos}" stroke="#1e3a8a" stroke-width="0.75" />`;
+      }
+      return `
+        <svg viewBox="0 0 44 44" class="w-11 h-11 inline-block drop-shadow-sm m-1">
+          <rect x="0" y="0" width="44" height="44" fill="#93c5fd" stroke="#1e3a8a" stroke-width="1.5" rx="1"/>
+          ${gridLines}
+        </svg>
+      `;
+    }
+
+    // 3. Ten Rod (1x10 clearly divided segments)
+    function getTenRodSVG() {
+      let segments = '';
+      for (let i = 1; i < 10; i++) {
+        let y = i * 4.4;
+        segments += `<line x1="0" y1="${y}" x2="7" y2="${y}" stroke="#065f46" stroke-width="0.8" />`;
+      }
+      return `
+        <svg viewBox="0 0 7 44" class="w-2.5 h-11 inline-block drop-shadow-sm m-0.5">
+          <rect x="0" y="0" width="7" height="44" fill="#6ee7b7" stroke="#065f46" stroke-width="1.2" rx="0.5"/>
+          ${segments}
+        </svg>
+      `;
+    }
+
+    // 4. One Unit (Clear 3D micro cube)
+    function getOneUnitSVG() {
+      return `
+        <svg viewBox="0 0 12 12" class="w-3 h-3 inline-block drop-shadow-sm m-1">
+          <rect x="1" y="1" width="10" height="10" fill="#fca5a5" stroke="#991b1b" stroke-width="1.2" rx="1"/>
+        </svg>
+      `;
+    }
+
+    // 3. Render MAB Blocks Question
+    function renderQ3() {
+      const c = document.getElementById('q3_container');
+      const d = activeData.q3;
+
+      let cubes = get3DThousandCubeSVG().repeat(d.thousands);
+      let flats = get100FlatSVG().repeat(d.hundreds);
+      let rods = getTenRodSVG().repeat(d.tens);
+      let units = getOneUnitSVG().repeat(d.ones);
+
+      const labels = i18n[currentLang];
+      const writtenAns = currentLang === 'en' ? d.writtenEn : d.writtenAm;
+
+      c.innerHTML = `
+        <!-- High-Contrast Blocks Display Grid -->
+        <div class="grid grid-cols-4 gap-2 mb-4 bg-white p-3 rounded-xl border border-slate-200">
+          
+          <!-- Thousands -->
+          <div class="flex flex-col items-center border-r border-slate-100 pr-1">
+            <span class="text-[11px] font-bold text-amber-800 uppercase mb-1.5">${labels.thousandsLbl} (${d.thousands})</span>
+            <div class="flex flex-wrap justify-center items-center gap-1">${cubes}</div>
+          </div>
+
+          <!-- Hundreds -->
+          <div class="flex flex-col items-center border-r border-slate-100 px-1">
+            <span class="text-[11px] font-bold text-blue-800 uppercase mb-1.5">${labels.hundredsLbl} (${d.hundreds})</span>
+            <div class="flex flex-wrap justify-center items-center gap-1">${flats}</div>
+          </div>
+
+          <!-- Tens -->
+          <div class="flex flex-col items-center border-r border-slate-100 px-1">
+            <span class="text-[11px] font-bold text-emerald-800 uppercase mb-1.5">${labels.tensLbl} (${d.tens})</span>
+            <div class="flex flex-wrap justify-center items-center gap-1.5">${rods}</div>
+          </div>
+
+          <!-- Ones -->
+          <div class="flex flex-col items-center pl-1">
+            <span class="text-[11px] font-bold text-rose-800 uppercase mb-1.5">${labels.onesLbl} (${d.ones})</span>
+            <div class="flex flex-wrap justify-center items-center gap-1">${units}</div>
+          </div>
+
+        </div>
+
+        <!-- Formula Blank Line -->
+        <div class="flex flex-wrap items-center gap-1 font-bold text-sm sm:text-base mb-3 text-slate-800">
+          <span class="border-b-2 border-slate-700 w-12 text-center handwriting text-blue-700 text-lg">${showKey ? d.thousands : ''}</span> ${labels.thousandsLbl} +
+          <span class="border-b-2 border-slate-700 w-12 text-center handwriting text-blue-700 text-lg">${showKey ? d.hundreds : ''}</span> ${labels.hundredsLbl} +
+          <span class="border-b-2 border-slate-700 w-12 text-center handwriting text-blue-700 text-lg">${showKey ? d.tens : ''}</span> ${labels.tensLbl} +
+          <span class="border-b-2 border-slate-700 w-12 text-center handwriting text-blue-700 text-lg">${showKey ? d.ones : ''}</span> ${labels.onesLbl} =
+          <span class="border-b-2 border-slate-700 w-24 text-center handwriting text-blue-700 text-lg font-bold">${showKey ? d.total : ''}</span>
+        </div>
+
+        <!-- Written Form Blank Line -->
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-xs sm:text-sm text-slate-600 whitespace-nowrap">${labels.writtenFormLbl}</span>
+          <div class="flex-1 border-b-2 border-slate-700 min-h-[26px] handwriting text-blue-700 text-lg pl-2">
+            ${showKey ? writtenAns : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. Expanded Form
+    function renderQ4() {
+      const container = document.getElementById('q4_container');
+      const letters = ['a', 'b'];
+      container.innerHTML = activeData.q4.map((item, idx) => `
+        <div class="flex items-center gap-3">
+          <span class="font-bold text-slate-500">${letters[idx]})</span>
+          <span class="font-mono font-black text-base w-16">${item.num} =</span>
+          <div class="flex-1 border-b-2 border-slate-700 min-h-[28px] handwriting text-blue-700 text-lg pl-2 font-bold">
+            ${showKey ? item.ans : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 5. Comparison
+    function renderQ5() {
+      const container = document.getElementById('q5_container');
+      const letters = ['a', 'b', 'c'];
+      container.innerHTML = activeData.q5.map((item, idx) => `
+        <div class="flex items-center justify-center gap-2 font-mono font-bold text-base">
+          <span class="text-slate-500 text-sm font-sans mr-1">${letters[idx]})</span>
+          <span>${item.left}</span>
+          <div class="w-9 h-9 border-2 border-slate-700 rounded-lg flex items-center justify-center text-xl handwriting text-blue-700 font-black">
+            ${showKey ? item.ans : ''}
+          </div>
+          <span>${item.right}</span>
+        </div>
+      `).join('');
+    }
+
+    // 6. Rounding
+    function renderQ6() {
+      const container = document.getElementById('q6_container');
+      const letters = ['a', 'b', 'c', 'd'];
+      container.innerHTML = activeData.q6.map((item, idx) => `
+        <div class="flex items-center gap-2 font-mono text-sm sm:text-base">
+          <span class="font-sans font-bold text-slate-500 text-xs">${letters[idx]})</span>
+          <span class="font-black text-slate-800">${item.num} =</span>
+          <div class="flex-1 border-b-2 border-slate-700 min-h-[26px] handwriting text-blue-700 font-black text-lg pl-1">
+            ${showKey ? item.ans : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Bonus Section
+    function renderBonus() {
+      const c = document.getElementById('bonus_container');
+      const b = activeData.bonus;
+      const l = i18n[currentLang];
+      c.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-4xl font-black font-mono text-slate-900 border-2 border-slate-800 rounded-xl px-4 py-2 bg-white shadow-sm">
+            ${b.num}
+          </div>
+          <div class="flex-1 w-full space-y-2 text-sm font-bold">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-slate-700">${l.bonusTh}</span>
+              <div class="w-36 border-b-2 border-slate-700 min-h-[24px] handwriting text-blue-700 font-black text-lg pl-2">
+                ${showKey ? b.th : ''}
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-slate-700">${l.bonusH}</span>
+              <div class="w-36 border-b-2 border-slate-700 min-h-[24px] handwriting text-blue-700 font-black text-lg pl-2">
+                ${showKey ? b.h : ''}
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-slate-700">${l.bonusT}</span>
+              <div class="w-36 border-b-2 border-slate-700 min-h-[24px] handwriting text-blue-700 font-black text-lg pl-2">
+                ${showKey ? b.t : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Initial render
+    renderAll();
+  </script>
+</body>
+</html>

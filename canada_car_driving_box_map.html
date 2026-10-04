@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Canada Box Map: Animated Car Driving Practice</title>
+  <style>
+    :root {
+      --primary: #c51d24;
+      --primary-dark: #8b0f14;
+      --secondary: #0284c7;
+      --secondary-dark: #0369a1;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-light: #334155;
+      --text: #f8fafc;
+      --border: #475569;
+      --success: #16a34a;
+      --danger: #dc2626;
+
+      /* Box Colors */
+      --c-yt: #a5b4fc;
+      --c-nt: #818cf8;
+      --c-nu: #6366f1;
+      --c-bc: #34d399;
+      --c-ab: #6ee7b7;
+      --c-sk: #fde047;
+      --c-mb: #facc15;
+      --c-on: #fb923c;
+      --c-qc: #38bdf8;
+      --c-nl: #c084fc;
+      --c-pe: #f472b6;
+      --c-nb: #fb7185;
+      --c-ns: #f87171;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    header h1 { margin: 0 0 4px 0; font-size: 1.8rem; }
+    header p { margin: 0; opacity: 0.9; font-size: 0.95rem; }
+
+    main {
+      max-width: 1050px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 22px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    /* MAP CONTAINER & ANIMATION OVERLAYS */
+    .map-container {
+      position: relative;
+      width: 100%;
+      max-width: 880px;
+      margin: 0 auto;
+      background: #0b1120;
+      border-radius: 12px;
+      padding: 16px;
+      border: 2px solid var(--secondary);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+    }
+
+    svg.box-map {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+
+    .box-region {
+      stroke: #0f172a;
+      stroke-width: 4;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .box-region:hover {
+      filter: brightness(1.2) drop-shadow(0 0 8px rgba(255,255,255,0.4));
+    }
+    .box-region.is-origin {
+      stroke: #22c55e !important;
+      stroke-width: 6 !important;
+    }
+    .box-region.is-dest {
+      stroke: #f43f5e !important;
+      stroke-width: 6 !important;
+      animation: pulseDest 1.2s infinite alternate;
+    }
+    @keyframes pulseDest {
+      from { filter: brightness(1.0); }
+      to { filter: brightness(1.35) drop-shadow(0 0 12px #f43f5e); }
+    }
+
+    .box-text {
+      font-weight: 800;
+      font-size: 26px;
+      fill: #0f172a;
+      pointer-events: none;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .box-subtext {
+      font-size: 13px;
+      font-weight: 700;
+      fill: #1e293b;
+      pointer-events: none;
+      text-anchor: middle;
+    }
+
+    /* THE ANIMATED CAR SPRITE */
+    #movingCar {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      font-size: 38px;
+      line-height: 48px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 100;
+      transition: left 1.5s cubic-bezier(0.45, 0, 0.55, 1), 
+                  top 1.5s cubic-bezier(0.45, 0, 0.55, 1),
+                  transform 0.4s ease;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.7));
+    }
+
+    /* ARROW PATH & HEAD */
+    #travelArrow {
+      stroke: #facc15;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 12, 6;
+      animation: dashMove 1s linear infinite;
+      display: none;
+    }
+    @keyframes dashMove {
+      to { stroke-dashoffset: -36; }
+    }
+
+    /* CONTROLLER STUDIO PANEL */
+    .mission-box {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .mission-text {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .compass-nav-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 70px);
+      gap: 6px;
+      margin: 10px auto;
+    }
+    .dir-btn {
+      height: 52px;
+      background: var(--surface-light);
+      border: 2px solid #64748b;
+      border-radius: 8px;
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dir-btn:hover {
+      background: var(--secondary);
+      border-color: #38bdf8;
+      transform: scale(1.05);
+    }
+    .dir-btn:active { transform: scale(0.96); }
+
+    .btn {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--secondary-dark); }
+    .btn-next { background: #22c55e; }
+    .btn-next:hover { background: #16a34a; }
+
+    .score-badge {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      background: #0369a1;
+      color: white;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    .status-alert {
+      font-size: 1.15rem;
+      font-weight: bold;
+      min-height: 28px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🚗 Canada Box Map: Animated Driving Practice</h1>
+    <p>Watch the car move and arrow point on your simplified box map to master cardinal directions[cite: 10, 12, 19]!</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+        <span class="score-badge" id="scoreBoard">Score: 0 / 0 (0%)</span>
+        <button class="btn btn-next" onclick="generateMission()">🎲 New Random Trip</button>
+      </div>
+
+      <!-- INTERACTIVE SCHEMATIC BOX MAP -->
+      <div class="map-container" id="mapWrapper">
+        <!-- Moving Car DOM element -->
+        <div id="movingCar">🚗</div>
+
+        <div style="text-align: center; margin-bottom: 6px; font-weight: 800; color: #38bdf8; letter-spacing: 2px;">
+          ▲ ARCTIC OCEAN (NORTH) ▲[cite: 10]
+        </div>
+
+        <svg class="box-map" viewBox="0 0 900 600" id="boxSvg">
+          <!-- ARROW MARKER DEFINITION -->
+          <defs>
+            <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#facc15" />
+            </marker>
+          </defs>
+
+          <!-- DYNAMIC TRAVEL ARROW -->
+          <line id="travelArrow" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowHead)" />
+
+          <!-- TOP ROW: TERRITORIES (West to East) -->
+          <!-- Yukon (YT) -->
+          <rect id="box-YT" class="box-region" data-id="YT" x="10" y="20" width="180" height="260" fill="var(--c-yt)" />
+          <text x="100" y="140" class="box-text">YT</text>
+          <text x="100" y="170" class="box-subtext">Yukon</text>
+
+          <!-- Northwest Territories (NT) -->
+          <rect id="box-NT" class="box-region" data-id="NT" x="190" y="20" width="170" height="260" fill="var(--c-nt)" />
+          <text x="275" y="140" class="box-text">NT</text>
+          <text x="275" y="170" class="box-subtext">N.W.T.</text>
+
+          <!-- Nunavut (NU) -->
+          <rect id="box-NU" class="box-region" data-id="NU" x="360" y="20" width="530" height="260" fill="var(--c-nu)" />
+          <text x="625" y="140" class="box-text" style="fill:white;">NU</text>
+          <text x="625" y="170" class="box-subtext" style="fill:white;">Nunavut</text>
+
+          <!-- BOTTOM ROW: PROVINCES (West to East) -->
+          <!-- British Columbia (BC) -->
+          <rect id="box-BC" class="box-region" data-id="BC" x="10" y="280" width="180" height="260" fill="var(--c-bc)" />
+          <text x="100" y="400" class="box-text">BC</text>
+          <text x="100" y="430" class="box-subtext">British Columbia</text>
+
+          <!-- Alberta (AB) -->
+          <rect id="box-AB" class="box-region" data-id="AB" x="190" y="280" width="70" height="260" fill="var(--c-ab)" />
+          <text x="225" y="400" class="box-text">AB</text>
+          <text x="225" y="430" class="box-subtext">Alberta</text>
+
+          <!-- Saskatchewan (SK) -->
+          <rect id="box-SK" class="box-region" data-id="SK" x="260" y="280" width="90" height="260" fill="var(--c-sk)" />
+          <text x="305" y="400" class="box-text">SK</text>
+          <text x="305" y="430" class="box-subtext">Sask.</text>
+
+          <!-- Manitoba (MB) -->
+          <rect id="box-MB" class="box-region" data-id="MB" x="350" y="280" width="80" height="260" fill="var(--c-mb)" />
+          <text x="390" y="400" class="box-text">MB</text>
+          <text x="390" y="430" class="box-subtext">Manitoba</text>
+
+          <!-- Ontario (ON) -->
+          <rect id="box-ON" class="box-region" data-id="ON" x="430" y="280" width="85" height="260" fill="var(--c-on)" />
+          <text x="472" y="400" class="box-text">ON</text>
+          <text x="472" y="430" class="box-subtext">Ontario</text>
+
+          <!-- Quebec (QC) -->
+          <rect id="box-QC" class="box-region" data-id="QC" x="515" y="280" width="125" height="260" fill="var(--c-qc)" />
+          <text x="577" y="400" class="box-text">QC</text>
+          <text x="577" y="430" class="box-subtext">Quebec</text>
+
+          <!-- ATLANTIC STACK -->
+          <!-- Newfoundland and Labrador (NL) -->
+          <rect id="box-NL" class="box-region" data-id="NL" x="640" y="280" width="250" height="95" fill="var(--c-nl)" />
+          <text x="765" y="325" class="box-text">NL</text>
+          <text x="765" y="350" class="box-subtext">Newfoundland & Labrador</text>
+
+          <!-- Prince Edward Island (PE) -->
+          <rect id="box-PE" class="box-region" data-id="PE" x="640" y="375" width="250" height="75" fill="var(--c-pe)" />
+          <text x="765" y="410" class="box-text">PE</text>
+          <text x="765" y="432" class="box-subtext">Prince Edward Island</text>
+
+          <!-- New Brunswick (NB) -->
+          <rect id="box-NB" class="box-region" data-id="NB" x="640" y="450" width="120" height="90" fill="var(--c-nb)" />
+          <text x="700" y="492" class="box-text">NB</text>
+          <text x="700" y="518" class="box-subtext">New Brunswick</text>
+
+          <!-- Nova Scotia (NS) -->
+          <rect id="box-NS" class="box-region" data-id="NS" x="760" y="450" width="130" height="90" fill="var(--c-ns)" />
+          <text x="825" y="492" class="box-text">NS</text>
+          <text x="825" y="518" class="box-subtext">Nova Scotia</text>
+        </svg>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 6px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">
+          <span>◀ PACIFIC OCEAN (WEST)[cite: 10]</span>
+          <span style="color: #94a3b8;">▼ UNITED STATES (SOUTH)[cite: 10] ▼</span>
+          <span>ATLANTIC OCEAN (EAST) ▶[cite: 10]</span>
+        </div>
+      </div>
+
+      <!-- MISSION & NAVIGATION CONTROLS -->
+      <div class="mission-box">
+        <div style="flex: 1; min-width: 300px;">
+          <div style="text-transform: uppercase; font-size: 0.8rem; color: #94a3b8; font-weight: bold;">Current Road Trip Mission:</div>
+          <div id="missionPrompt" class="mission-text">Ready to drive! Press "New Random Trip" or pick below.</div>
+          <div id="statusAlert" class="status-alert"></div>
+        </div>
+
+        <!-- D-PAD CONTROLLER -->
+        <div>
+          <div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; color: #facc15;">Which Direction are you heading?</div>
+          <div class="compass-nav-buttons">
+            <div></div>
+            <button class="dir-btn" onclick="submitAnswer('N')">N</button>
+            <div></div>
+            <button class="dir-btn" onclick="submitAnswer('W')">W</button>
+            <div style="display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🧭</div>
+            <button class="dir-btn" onclick="submitAnswer('E')">E</button>
+            <div></div>
+            <button class="dir-btn" onclick="submitAnswer('S')">S</button>
+            <div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Exact center coordinates for each box region in the 900x600 SVG viewBox
+    const boxCenters = {
+      YT: { x: 100, y: 150, name: "Yukon" },
+      NT: { x: 275, y: 150, name: "Northwest Territories" },
+      NU: { x: 625, y: 150, name: "Nunavut" },
+      BC: { x: 100, y: 410, name: "British Columbia" },
+      AB: { x: 225, y: 410, name: "Alberta" },
+      SK: { x: 305, y: 410, name: "Saskatchewan" },
+      MB: { x: 390, y: 410, name: "Manitoba" },
+      ON: { x: 472, y: 410, name: "Ontario" },
+      QC: { x: 577, y: 410, name: "Quebec" },
+      NL: { x: 765, y: 327, name: "Newfoundland & Labrador" },
+      PE: { x: 765, y: 412, name: "Prince Edward Island" },
+      NB: { x: 700, y: 495, name: "New Brunswick" },
+      NS: { x: 825, y: 495, name: "Nova Scotia" }
+    };
+
+    // Preset curriculum practice trips matching Worksheets 8, 10, & Canadian geography
+    const trips = [
+      { from: "ON", to: "QC", dir: "E", why: "Quebec is directly East (Right) of Ontario!" },
+      { from: "ON", to: "MB", dir: "W", why: "Manitoba is directly West (Left) of Ontario!" },
+      { from: "ON", to: "NU", dir: "N", why: "Nunavut is directly North (Up) of Ontario!" },
+      { from: "ON", to: "BC", dir: "W", why: "British Columbia is all the way West on the Pacific coast!" },
+      { from: "ON", to: "AB", dir: "W", why: "Alberta is to the West of Ontario!" },
+      { from: "ON", to: "NB", dir: "E", why: "New Brunswick is to the East in the Atlantic stack!" },
+      { from: "AB", to: "QC", dir: "E", why: "Quebec is East across the map from Alberta!" },
+      { from: "MB", to: "SK", dir: "W", why: "Saskatchewan is West (Left) of Manitoba!" },
+      { from: "NU", to: "ON", dir: "S", why: "Ontario is directly South (Down) from Nunavut!" },
+      { from: "NS", to: "YT", dir: "W", why: "Yukon is all the way to the West from Nova Scotia!" }
+    ];
+
+    let currentTrip = null;
+    let score = 0;
+    let attempts = 0;
+    let answered = false;
+
+    // Position the HTML car based on SVG viewBox coordinates
+    function positionCar(svgX, svgY, rotateDeg = 0) {
+      const svg = document.getElementById("boxSvg");
+      const wrapper = document.getElementById("mapWrapper");
+      
+      const svgRect = svg.getBoundingClientRect();
+      const wrapRect = wrapper.getBoundingClientRect();
+
+      // Convert 900x600 viewBox coordinate to rendered pixel coordinate
+      const scaleX = svgRect.width / 900;
+      const scaleY = svgRect.height / 600;
+
+      const pixelX = (svgRect.left - wrapRect.left) + (svgX * scaleX);
+      const pixelY = (svgRect.top - wrapRect.top) + (svgY * scaleY);
+
+      const car = document.getElementById("movingCar");
+      car.style.left = `${pixelX}px`;
+      car.style.top = `${pixelY}px`;
+      car.style.transform = `translate(-50%, -50%) rotate(${rotateDeg}deg)`;
+    }
+
+    // Draw the animated SVG line & arrow
+    function drawArrow(x1, y1, x2, y2) {
+      const arrow = document.getElementById("travelArrow");
+      arrow.setAttribute("x1", x1);
+      arrow.setAttribute("y1", y1);
+      arrow.setAttribute("x2", x2);
+      arrow.setAttribute("y2", y2);
+      arrow.style.display = "block";
+    }
+
+    // Set up and start an animated journey
+    function startTrip(trip) {
+      currentTrip = trip;
+      answered = false;
+
+      // Update map highlighting
+      document.querySelectorAll(".box-region").forEach(r => {
+        r.classList.remove("is-origin", "is-dest");
+      });
+      document.getElementById(`box-${trip.from}`).classList.add("is-origin");
+      document.getElementById(`box-${trip.to}`).classList.add("is-dest");
+
+      const origin = boxCenters[trip.from];
+      const dest = boxCenters[trip.to];
+
+      // Reset car back to origin immediately
+      const car = document.getElementById("movingCar");
+      car.style.transition = "none";
+      positionCar(origin.x, origin.y, 0);
+
+      // Hide previous arrow
+      document.getElementById("travelArrow").style.display = "none";
+
+      // Display question prompt
+      document.getElementById("missionPrompt").innerHTML = 
+        `You are driving from <strong>${origin.name} (${trip.from})</strong> to <strong>${dest.name} (${trip.to})</strong>!`;
+      const alert = document.getElementById("statusAlert");
+      alert.textContent = "🚗 Driving... Click the correct compass direction (N, E, S, or W)!";
+      alert.style.color = "#38bdf8";
+
+      // Animate arrow and drive car after a brief pause
+      setTimeout(() => {
+        car.style.transition = "left 1.4s cubic-bezier(0.45, 0, 0.55, 1), top 1.4s cubic-bezier(0.45, 0, 0.55, 1), transform 0.4s ease";
+        
+        // Calculate heading angle for car & arrow rotation
+        const dx = dest.x - origin.x;
+        const dy = dest.y - origin.y;
+        let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        if (dx < 0) angle += 180; // Flip car if driving west so it's upright
+
+        // Move car to destination
+        positionCar(dest.x, dest.y, angle);
+
+        // Draw animated guide arrow
+        drawArrow(origin.x, origin.y, dest.x, dest.y);
+      }, 150);
+    }
+
+    function generateMission() {
+      // Pick a random trip from the list
+      const randomTrip = trips[Math.floor(Math.random() * trips.length)];
+      startTrip(randomTrip);
+    }
+
+    function submitAnswer(chosenDir) {
+      if (!currentTrip) return;
+      if (answered) return; // Prevent double scoring
+      answered = true;
+
+      attempts++;
+      const alert = document.getElementById("statusAlert");
+
+      if (chosenDir === currentTrip.dir) {
+        score++;
+        alert.innerHTML = `✅ <strong>CORRECT!</strong> You travelled <strong>${getDirName(currentTrip.dir)}</strong>. ${currentTrip.why}`;
+        alert.style.color = "var(--success)";
+      } else {
+        alert.innerHTML = `❌ <strong>NOT QUITE!</strong> You went <strong>${getDirName(currentTrip.dir)}</strong>. ${currentTrip.why}`;
+        alert.style.color = "var(--danger)";
+      }
+
+      const percent = Math.round((score / attempts) * 100);
+      document.getElementById("scoreBoard").textContent = `Score: ${score} / ${attempts} (${percent}%)`;
+    }
+
+    function getDirName(code) {
+      switch(code) {
+        case "N": return "NORTH (Up) ⬆️";
+        case "E": return "EAST (Right) ➡️";
+        case "S": return "SOUTH (Down) ⬇️";
+        case "W": return "WEST (Left) ⬅️";
+      }
+    }
+
+    // Allow clicking boxes directly to trigger trips
+    document.querySelectorAll(".box-region").forEach(rect => {
+      rect.addEventListener("click", () => {
+        const targetId = rect.getAttribute("data-id");
+        if (targetId !== "ON") {
+          // Drive from Ontario to clicked box
+          let dir = "E";
+          const center = boxCenters[targetId];
+          const onCenter = boxCenters["ON"];
+          if (center.y < onCenter.y - 50) dir = "N";
+          else if (center.x < onCenter.x) dir = "W";
+          else if (center.x > onCenter.x) dir = "E";
+          else dir = "S";
+
+          startTrip({
+            from: "ON",
+            to: targetId,
+            dir: dir,
+            why: `${boxCenters[targetId].name} is ${getDirName(dir)} from Ontario!`
+          });
+        }
+      });
+    });
+
+    // Handle browser window resize so car tracks accurately
+    window.addEventListener("resize", () => {
+      if (currentTrip) {
+        const dest = boxCenters[currentTrip.to];
+        positionCar(dest.x, dest.y);
+      }
+    });
+
+    // Start with the first trip from Worksheet 8 (Ontario to Quebec)
+    window.addEventListener("DOMContentLoaded", () => {
+      startTrip(trips[0]);
+    });
+  </script>
+</body>
+</html>

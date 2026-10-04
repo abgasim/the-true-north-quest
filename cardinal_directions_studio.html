@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cardinal Directions Game Studio & Quiz Lab</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --accent: #f59e0b;
+      --accent-dark: #d97706;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-light: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #475569;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    header {
+      background: linear-gradient(135deg, #0369a1, #0f172a);
+      border-bottom: 2px solid #38bdf8;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    header h1 { margin: 0 0 6px 0; font-size: 1.9rem; color: #38bdf8; letter-spacing: 0.5px; }
+    header p { margin: 0; color: #cbd5e1; font-size: 0.95rem; }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      background: var(--surface);
+      padding: 10px 15px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-btn {
+      border: 1px solid transparent;
+      background: var(--surface-light);
+      padding: 8px 18px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 9999px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+    .nav-btn.active, .nav-btn:hover {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 22px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+
+    h2 { color: #38bdf8; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    h3 { margin-top: 0; color: #f1f5f9; }
+
+    /* COMPASS STUDIO STYLES */
+    .compass-lab-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      align-items: center;
+      justify-content: center;
+      padding: 15px 0;
+    }
+
+    .compass-interactive-shell {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e293b 0%, #0b1120 100%);
+      border: 8px solid #334155;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.3), inset 0 0 15px rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .compass-point-btn {
+      position: absolute;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-weight: 800;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .compass-point-btn:hover, .compass-point-btn.selected {
+      color: #38bdf8;
+      text-shadow: 0 0 8px #38bdf8;
+      transform: scale(1.3);
+    }
+
+    /* Point Positions */
+    .pt-n  { top: 8px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; color: #ef4444; }
+    .pt-ne { top: 38px; right: 38px; font-size: 0.95rem; }
+    .pt-e  { top: 50%; right: 10px; transform: translateY(-50%); font-size: 1.5rem; }
+    .pt-se { bottom: 38px; right: 38px; font-size: 0.95rem; }
+    .pt-s  { bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; }
+    .pt-sw { bottom: 38px; left: 38px; font-size: 0.95rem; }
+    .pt-w  { top: 50%; left: 10px; transform: translateY(-50%); font-size: 1.5rem; }
+    .pt-nw { top: 38px; left: 38px; font-size: 0.95rem; }
+
+    .needle-hub {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 3px solid #0284c7;
+      z-index: 20;
+    }
+
+    .compass-needle {
+      position: absolute;
+      width: 12px;
+      height: 200px;
+      top: 40px;
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 10;
+      pointer-events: none;
+    }
+    .needle-north {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 100px solid #ef4444;
+      filter: drop-shadow(0 0 4px rgba(239,68,68,0.5));
+    }
+    .needle-south {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 100px solid #94a3b8;
+    }
+
+    .dial-card {
+      flex: 1;
+      min-width: 280px;
+      background: #0b1120;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    /* ARCADE PILOT GAME */
+    .game-arena {
+      background: #000;
+      border-radius: 12px;
+      border: 2px solid #38bdf8;
+      padding: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .target-screen {
+      height: 200px;
+      background: radial-gradient(circle, #0c4a6e 0%, #031e30 100%);
+      border-radius: 8px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      border: 1px dashed #38bdf8;
+    }
+    .mission-prompt {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #f8fafc;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .plane-sprite {
+      font-size: 2.8rem;
+      transition: transform 0.3s ease;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .dpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 75px);
+      grid-gap: 8px;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .dpad-btn {
+      height: 60px;
+      background: var(--surface-light);
+      border: 2px solid #64748b;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .dpad-btn:hover {
+      background: #38bdf8;
+      color: #0f172a;
+      border-color: #f8fafc;
+      transform: translateY(-2px);
+    }
+    .dpad-btn:active { transform: translateY(1px); }
+
+    /* CANADIAN TRAVEL SIMULATOR */
+    .sim-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      background: #0b1120;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #334155;
+    }
+    select {
+      background: var(--surface);
+      color: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-accent { background: var(--accent); color: #0f172a; }
+    .btn-accent:hover { background: var(--accent-dark); }
+
+    /* QUIZ STUDIO */
+    .quiz-box {
+      background: #0b1120;
+      border-radius: 10px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .quiz-btn-opt {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      margin: 8px 0;
+      border-radius: 8px;
+      background: var(--surface);
+      color: #f8fafc;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .quiz-btn-opt:hover {
+      background: var(--surface-light);
+      border-color: #38bdf8;
+    }
+
+    .score-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: #0284c7;
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🧭 Cardinal Directions Game Studio & Quiz Lab</h1>
+    <p>Master Compass Navigation, Inter-Provincial Headings & Global Continents (Grades 4 & 5)[cite: 10, 11, 12, 13]!</p>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" onclick="showTab('compass-lab')">🧭 360° Compass Lab</button>
+    <button class="nav-btn" onclick="showTab('pilot-game')">✈️ Speed Pilot Arcade</button>
+    <button class="nav-btn" onclick="showTab('canada-nav')">🇨🇦 Canada Driving Practice</button>
+    <button class="nav-btn" onclick="showTab('world-nav')">🌍 World Continent Explorer</button>
+    <button class="nav-btn" onclick="showTab('quiz-studio')">🏆 Quiz Arena</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: 360° COMPASS LAB -->
+    <div id="compass-lab" class="tab-content active">
+      <div class="card">
+        <h2>Interactive 360° Compass Rose</h2>
+        <p>Click any point on the compass ring to rotate the needle and reveal its heading and mnemonic trick[cite: 10, 11, 12]!</p>
+
+        <div class="compass-lab-wrap">
+          <div class="compass-interactive-shell">
+            <!-- Points -->
+            <button class="compass-point-btn pt-n" onclick="pointCompass('N', 0)">N</button>
+            <button class="compass-point-btn pt-ne" onclick="pointCompass('NE', 45)">NE</button>
+            <button class="compass-point-btn pt-e" onclick="pointCompass('E', 90)">E</button>
+            <button class="compass-point-btn pt-se" onclick="pointCompass('SE', 135)">SE</button>
+            <button class="compass-point-btn pt-s" onclick="pointCompass('S', 180)">S</button>
+            <button class="compass-point-btn pt-sw" onclick="pointCompass('SW', 225)">SW</button>
+            <button class="compass-point-btn pt-w" onclick="pointCompass('W', 270)">W</button>
+            <button class="compass-point-btn pt-nw" onclick="pointCompass('NW', 315)">NW</button>
+
+            <!-- Center needle -->
+            <div class="needle-hub"></div>
+            <div class="compass-needle" id="compassNeedle">
+              <div class="needle-north"></div>
+              <div class="needle-south"></div>
+            </div>
+          </div>
+
+          <div class="dial-card">
+            <span class="score-badge" id="headingCategory">Cardinal Point</span>
+            <h3 id="headingTitle" style="font-size: 1.8rem; margin: 8px 0; color:#38bdf8;">North (N) - 0°</h3>
+            <p id="headingDesc" style="color: #cbd5e1; font-size: 1.05rem;">Points directly toward the top of maps and toward Canada's <strong>Arctic Ocean</strong>[cite: 10]!</p>
+            <div style="background: rgba(56,189,248,0.1); border-left: 4px solid #38bdf8; padding: 10px; border-radius: 4px; margin-top: 15px;">
+              <strong style="color: #facc15;">Memory Rhyme Clockwise:</strong>
+              <div style="font-style: italic; margin-top: 4px;">"<strong>N</strong>ever <strong>E</strong>at <strong>S</strong>oggy <strong>W</strong>affles!" (N ➔ E ➔ S ➔ W)[cite: 2]</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ARCADE SPEED PILOT GAME -->
+    <div id="pilot-game" class="tab-content">
+      <div class="card">
+        <h2>✈️ Compass Speed Pilot (Timed Arcade Game)</h2>
+        <p>Your plane needs to navigate through Canada's skies! Read the target command and hit the corresponding directional control before time runs out!</p>
+
+        <div class="game-arena">
+          <div class="hud">
+            <div>Score: <span id="gameScore" style="color:#facc15;">0</span></div>
+            <div>Time Left: <span id="gameTimer" style="color:#ef4444;">15s</span></div>
+            <div>Streak: <span id="gameStreak" style="color:#4ade80;">🔥 0</span></div>
+          </div>
+
+          <div class="target-screen">
+            <div id="gamePrompt" class="mission-prompt">Press "Start Flight" to Play!</div>
+            <div id="planeAvatar" class="plane-sprite">✈️</div>
+          </div>
+
+          <!-- Controls D-Pad -->
+          <div class="dpad-grid">
+            <button class="dpad-btn" onclick="sendFlightCommand('NW')">NW</button>
+            <button class="dpad-btn" style="background:#0284c7;" onclick="sendFlightCommand('N')">N</button>
+            <button class="dpad-btn" onclick="sendFlightCommand('NE')">NE</button>
+            
+            <button class="dpad-btn" style="background:#0284c7;" onclick="sendFlightCommand('W')">W</button>
+            <button class="dpad-btn btn-accent" id="startFlightBtn" style="font-size:0.85rem;" onclick="startFlightGame()">START</button>
+            <button class="dpad-btn" style="background:#0284c7;" onclick="sendFlightCommand('E')">E</button>
+            
+            <button class="dpad-btn" onclick="sendFlightCommand('SW')">SW</button>
+            <button class="dpad-btn" style="background:#0284c7;" onclick="sendFlightCommand('S')">S</button>
+            <button class="dpad-btn" onclick="sendFlightCommand('SE')">SE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: CANADA DRIVING SIMULATOR (WORKSHEET 8 & 10) -->
+    <div id="canada-nav" class="tab-content">
+      <div class="card">
+        <h2>🇨🇦 Driving from Ontario & Inter-Provincial Bearings</h2>
+        <p>Direct interactive adaptation of your <strong>Cardinal Directions Canada Worksheet (8 & 10)</strong>[cite: 10, 12]!</p>
+
+        <h3>Part 1: If you are driving from Ontario (ON), which direction are you going[cite: 10, 12]?</h3>
+        <div id="onDrivingForm"></div>
+        <button class="btn" onclick="checkOnDriving()">Check Ontario Bearings</button>
+        <span id="onDrivingFeedback" style="margin-left: 12px; font-weight: bold;"></span>
+
+        <h3 style="margin-top: 25px;">Part 2: Relative Positions (Worksheet 10)[cite: 12]</h3>
+        <div id="relPositionForm"></div>
+        <button class="btn btn-accent" onclick="checkRelPositions()">Check Relative Bearings</button>
+        <span id="relPosFeedback" style="margin-left: 12px; font-weight: bold;"></span>
+      </div>
+    </div>
+
+    <!-- TAB 4: WORLD CONTINENTS EXPLORER (WORKSHEET 9) -->
+    <div id="world-nav" class="tab-content">
+      <div class="card">
+        <h2>🌍 World Continents Navigator (Worksheet 9)</h2>
+        <p>If you live on the first continent, which cardinal direction do you travel to get to the second?</p>
+
+        <div id="continentsForm"></div>
+        <button class="btn" onclick="checkContinents()">Verify Global Travel Paths</button>
+        <span id="continentsFeedback" style="margin-left: 12px; font-weight: bold;"></span>
+      </div>
+    </div>
+
+    <!-- TAB 5: QUIZ ARENA -->
+    <div id="quiz-studio" class="tab-content">
+      <div class="card">
+        <h2>🏆 The Master Navigator Quiz Arena</h2>
+        <p>Answer the 5 interactive questions to earn your Junior Navigator Certification!</p>
+
+        <div id="quizContainer">
+          <div class="quiz-box">
+            <span class="score-badge" id="quizProgress">Question 1 of 5</span>
+            <h3 id="quizQuestion" style="margin: 10px 0 15px 0;">Loading question...</h3>
+            <div id="quizAnswers"></div>
+          </div>
+        </div>
+
+        <div id="quizResultPanel" style="display:none; text-align:center; padding:20px; background:#0b1120; border-radius:10px;">
+          <h2 id="finalScoreTitle" style="color: #facc15;">Quiz Complete!</h2>
+          <p id="finalScoreBody" style="font-size:1.15rem; color:#f8fafc;"></p>
+          <button class="btn btn-accent" onclick="restartQuiz()">Try Again ↺</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Tab Router
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Audio SFX Synthesis
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq, type="sine", duration=0.15) {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e){}
+    }
+
+    // 1. COMPASS LAB CONTROLLER
+    const compassData = {
+      N:  { name: "North", deg: 0, cat: "Cardinal Point", desc: "Straight UP on almost all maps. Canada borders the Arctic Ocean to the North!", sound: 440 },
+      NE: { name: "Northeast", deg: 45, cat: "Intermediate Point", desc: "Halfway between North and East.", sound: 493 },
+      E:  { name: "East", deg: 90, cat: "Cardinal Point", desc: "To the RIGHT. Where the sun rises! Canada borders the Atlantic Ocean to the East.", sound: 523 },
+      SE: { name: "Southeast", deg: 135, cat: "Intermediate Point", desc: "Halfway between South and East.", sound: 587 },
+      S:  { name: "South", deg: 180, cat: "Cardinal Point", desc: "Straight DOWN. Canada borders the United States directly to the South!", sound: 659 },
+      SW: { name: "Southwest", deg: 225, cat: "Intermediate Point", desc: "Halfway between South and West.", sound: 698 },
+      W:  { name: "West", deg: 270, cat: "Cardinal Point", desc: "To the LEFT. Where the sun sets! Canada borders the Pacific Ocean to the West.", sound: 783 },
+      NW: { name: "Northwest", deg: 315, cat: "Intermediate Point", desc: "Halfway between North and West. Home to Canada's Northwest Territories!", sound: 880 }
+    };
+
+    function pointCompass(code, angle) {
+      const data = compassData[code];
+      const needle = document.getElementById("compassNeedle");
+      needle.style.transform = `rotate(${angle}deg)`;
+      
+      document.querySelectorAll(".compass-point-btn").forEach(b => b.classList.remove("selected"));
+      event.target.classList.add("selected");
+
+      document.getElementById("headingCategory").textContent = data.cat;
+      document.getElementById("headingTitle").textContent = `${data.name} (${code}) - ${angle}°`;
+      document.getElementById("headingDesc").innerHTML = data.desc;
+      playBeep(data.sound);
+    }
+
+    // 2. SPEED PILOT GAME
+    let gameActive = false;
+    let score = 0;
+    let streak = 0;
+    let timeLeft = 15;
+    let timerInterval = null;
+    let currentTarget = null;
+    const missionPrompts = [
+      { text: "Fly NORTH to the Arctic Ocean!", target: "N", rot: 0 },
+      { text: "Fly WEST to the Pacific Ocean!", target: "W", rot: 270 },
+      { text: "Fly EAST to the Atlantic Ocean!", target: "E", rot: 90 },
+      { text: "Fly SOUTH to the United States border!", target: "S", rot: 180 },
+      { text: "Pilot NORTHWEST toward Yukon!", target: "NW", rot: 315 },
+      { text: "Pilot NORTHEAST toward Greenland!", target: "NE", rot: 45 },
+      { text: "Fly SOUTHWEST toward California!", target: "SW", rot: 225 },
+      { text: "Fly SOUTHEAST toward Florida!", target: "SE", rot: 135 }
+    ];
+
+    function startFlightGame() {
+      if (gameActive) return;
+      gameActive = true;
+      score = 0;
+      streak = 0;
+      timeLeft = 15;
+      document.getElementById("gameScore").textContent = "0";
+      document.getElementById("gameStreak").textContent = "🔥 0";
+      document.getElementById("startFlightBtn").disabled = true;
+      nextMission();
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById("gameTimer").textContent = timeLeft + "s";
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function nextMission() {
+      const rand = missionPrompts[Math.floor(Math.random() * missionPrompts.length)];
+      currentTarget = rand;
+      document.getElementById("gamePrompt").textContent = rand.text;
+      document.getElementById("planeAvatar").style.transform = "rotate(0deg)";
+    }
+
+    function sendFlightCommand(cmd) {
+      if (!gameActive) return;
+      if (cmd === currentTarget.target) {
+        score += 10 + (streak * 2);
+        streak++;
+        playBeep(600, "triangle", 0.1);
+        document.getElementById("planeAvatar").style.transform = `rotate(${currentTarget.rot}deg)`;
+        document.getElementById("gameScore").textContent = score;
+        document.getElementById("gameStreak").textContent = "🔥 " + streak;
+        nextMission();
+      } else {
+        streak = 0;
+        playBeep(220, "sawtooth", 0.2);
+        document.getElementById("gameStreak").textContent = "🔥 0";
+      }
+    }
+
+    function endGame() {
+      clearInterval(timerInterval);
+      gameActive = false;
+      document.getElementById("startFlightBtn").disabled = false;
+      document.getElementById("gamePrompt").textContent = `Game Over! Final Score: ${score}`;
+      playBeep(330, "sine", 0.4);
+    }
+
+    // 3. ONTARIO DRIVING & RELATIVE POSITIONS
+    const onDrivingData = [
+      { dest: "Quebec (QC)", ans: "E" },
+      { dest: "Manitoba (MB)", ans: "W" },
+      { dest: "Nunavut (NU)", ans: "N" },
+      { dest: "New Brunswick (NB)", ans: "E" },
+      { dest: "British Columbia (BC)", ans: "W" },
+      { dest: "Prince Edward Island (PE)", ans: "E" },
+      { dest: "Alberta (AB)", ans: "W" },
+      { dest: "Newfoundland & Labrador (NL)", ans: "E" },
+      { dest: "Saskatchewan (SK)", ans: "W" }
+    ];
+
+    const onContainer = document.getElementById("onDrivingForm");
+    onDrivingData.forEach((row, i) => {
+      const div = document.createElement("div");
+      div.className = "sim-row";
+      div.innerHTML = `
+        <span style="width:260px;">Drive from <strong>Ontario</strong> to <strong>${row.dest}</strong>:</span>
+        <select id="on-ans-${i}">
+          <option value="">Select Direction...</option>
+          <option value="N">North (N)</option>
+          <option value="E">East (E)</option>
+          <option value="S">South (S)</option>
+          <option value="W">West (W)</option>
+        </select>
+        <span id="on-fb-${i}" style="font-weight:bold; margin-left:8px;"></span>
+      `;
+      onContainer.appendChild(div);
+    });
+
+    function checkOnDriving() {
+      let correct = 0;
+      onDrivingData.forEach((row, i) => {
+        const val = document.getElementById(`on-ans-${i}`).value;
+        const fb = document.getElementById(`on-fb-${i}`);
+        if (val === row.ans) {
+          fb.textContent = "✓ Correct";
+          fb.style.color = "var(--success)";
+          correct++;
+        } else {
+          fb.textContent = `✗ Head ${row.ans}`;
+          fb.style.color = "var(--danger)";
+        }
+      });
+      document.getElementById("onDrivingFeedback").textContent = `Score: ${correct} / ${onDrivingData.length}`;
+      playBeep(correct === onDrivingData.length ? 650 : 350);
+    }
+
+    const relPositionsData = [
+      { q: "BC is what direction from Ontario?", ans: "W" },
+      { q: "Quebec is what direction from Alberta?", ans: "E" },
+      { q: "Ontario is what direction from Saskatchewan?", ans: "E" },
+      { q: "Yukon is what direction from Nova Scotia?", ans: "W" },
+      { q: "Saskatchewan is what direction from Manitoba?", ans: "W" },
+      { q: "Ontario is what direction from Nunavut?", ans: "S" }
+    ];
+
+    const relContainer = document.getElementById("relPositionForm");
+    relPositionsData.forEach((row, i) => {
+      const div = document.createElement("div");
+      div.className = "sim-row";
+      div.innerHTML = `
+        <span style="flex:1; min-width:280px;">${row.q}</span>
+        <select id="rel-ans-${i}">
+          <option value="">Select Direction...</option>
+          <option value="N">North (N)</option>
+          <option value="E">East (E)</option>
+          <option value="S">South (S)</option>
+          <option value="W">West (W)</option>
+        </select>
+        <span id="rel-fb-${i}" style="font-weight:bold; margin-left:8px;"></span>
+      `;
+      relContainer.appendChild(div);
+    });
+
+    function checkRelPositions() {
+      let correct = 0;
+      relPositionsData.forEach((row, i) => {
+        const val = document.getElementById(`rel-ans-${i}`).value;
+        const fb = document.getElementById(`rel-fb-${i}`);
+        if (val === row.ans) {
+          fb.textContent = "✓ Correct";
+          fb.style.color = "var(--success)";
+          correct++;
+        } else {
+          fb.textContent = `✗ ${row.ans}`;
+          fb.style.color = "var(--danger)";
+        }
+      });
+      document.getElementById("relPosFeedback").textContent = `Score: ${correct} / ${relPositionsData.length}`;
+      playBeep(correct === relPositionsData.length ? 650 : 350);
+    }
+
+    // 4. WORLD CONTINENTS EXPLORER
+    const continentsData = [
+      { from: "North America", to: "South America", ans: "S" },
+      { from: "Asia", to: "Australia", ans: "S" },
+      { from: "Africa", to: "Europe", ans: "N" },
+      { from: "Europe", to: "Asia", ans: "E" },
+      { from: "South America", to: "Africa", ans: "E" },
+      { from: "Antarctica", to: "Europe", ans: "N" }
+    ];
+
+    const contContainer = document.getElementById("continentsForm");
+    continentsData.forEach((row, i) => {
+      const div = document.createElement("div");
+      div.className = "sim-row";
+      div.innerHTML = `
+        <span style="flex:1; min-width:250px;">From <strong>${row.from}</strong> ➔ <strong>${row.to}</strong>:</span>
+        <select id="cont-ans-${i}">
+          <option value="">Direction...</option>
+          <option value="N">North (N)</option>
+          <option value="E">East (E)</option>
+          <option value="S">South (S)</option>
+          <option value="W">West (W)</option>
+        </select>
+        <span id="cont-fb-${i}" style="font-weight:bold; margin-left:8px;"></span>
+      `;
+      contContainer.appendChild(div);
+    });
+
+    function checkContinents() {
+      let correct = 0;
+      continentsData.forEach((row, i) => {
+        const val = document.getElementById(`cont-ans-${i}`).value;
+        const fb = document.getElementById(`cont-fb-${i}`);
+        if (val === row.ans) {
+          fb.textContent = "✓ Correct";
+          fb.style.color = "var(--success)";
+          correct++;
+        } else {
+          fb.textContent = `✗ Travel ${row.ans}`;
+          fb.style.color = "var(--danger)";
+        }
+      });
+      document.getElementById("continentsFeedback").textContent = `Score: ${correct} / ${continentsData.length}`;
+      playBeep(correct === continentsData.length ? 650 : 350);
+    }
+
+    // 5. QUIZ ARENA
+    const quizBank = [
+      {
+        q: "What is the mnemonic rhyme used to remember the four directions clockwise?",
+        options: ["North, East, South, West", "Never Eat Soggy Waffles", "Nine Elephants Sing Well", "Nobody Enjoys Sour Watermelon"],
+        answer: 1
+      },
+      {
+        q: "Which ocean is located directly to the WEST of Canada?",
+        options: ["Atlantic Ocean", "Pacific Ocean", "Arctic Ocean", "Indian Ocean"],
+        answer: 1
+      },
+      {
+        q: "If you leave Ontario and drive towards Quebec, which direction do you head?",
+        options: ["North", "South", "East", "West"],
+        answer: 2
+      },
+      {
+        q: "Which country shares Canada's southern border?",
+        options: ["United States", "Mexico", "Greenland", "Russia"],
+        answer: 0
+      },
+      {
+        q: "What direction lies halfway between South and West on a 8-point compass rose?",
+        options: ["SE (Southeast)", "NW (Northwest)", "SW (Southwest)", "WS (West-South)"],
+        answer: 2
+      }
+    ];
+
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+
+    function renderQuizQuestion() {
+      const q = quizBank[currentQuizIndex];
+      document.getElementById("quizProgress").textContent = `Question ${currentQuizIndex + 1} of ${quizBank.length}`;
+      document.getElementById("quizQuestion").textContent = q.q;
+      const opts = document.getElementById("quizAnswers");
+      opts.innerHTML = "";
+
+      q.options.forEach((optText, i) => {
+        const btn = document.createElement("button");
+        btn.className = "quiz-btn-opt";
+        btn.textContent = `${String.fromCharCode(65 + i)}. ${optText}`;
+        btn.onclick = () => selectQuizOption(i);
+        opts.appendChild(btn);
+      });
+    }
+
+    function selectQuizOption(choiceIndex) {
+      const q = quizBank[currentQuizIndex];
+      if (choiceIndex === q.answer) {
+        quizScore++;
+        playBeep(600, "triangle", 0.15);
+      } else {
+        playBeep(220, "sawtooth", 0.2);
+      }
+
+      currentQuizIndex++;
+      if (currentQuizIndex < quizBank.length) {
+        renderQuizQuestion();
+      } else {
+        finishQuiz();
+      }
+    }
+
+    function finishQuiz() {
+      document.getElementById("quizContainer").style.display = "none";
+      const panel = document.getElementById("quizResultPanel");
+      panel.style.display = "block";
+      document.getElementById("finalScoreBody").textContent = `You earned ${quizScore} out of ${quizBank.length} points!`;
+      playBeep(quizScore >= 4 ? 700 : 400, "sine", 0.4);
+    }
+
+    function restartQuiz() {
+      currentQuizIndex = 0;
+      quizScore = 0;
+      document.getElementById("quizContainer").style.display = "block";
+      document.getElementById("quizResultPanel").style.display = "none";
+      renderQuizQuestion();
+    }
+
+    renderQuizQuestion();
+  </script>
+</body>
+</html>

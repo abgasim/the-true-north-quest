@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Sense Quiz Studio | የቁጥሮች ግንዛቤ መለማመጃ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700;800&family=Patrick+Hand&display=swap"
+    rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Fredoka', 'Noto Sans Ethiopic', sans-serif;
+      background-color: #f8fafc;
+    }
+
+    .handwriting {
+      font-family: 'Patrick Hand', 'Noto Sans Ethiopic', cursive;
+    }
+
+    .worksheet {
+      background-color: #fffefb;
+      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1), 0 5px 15px -3px rgba(0, 0, 0, 0.05);
+      border: 3px solid #fde047;
+    }
+
+    .base10-cube {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      box-shadow: 2px 2px 0px #92400e;
+      display: inline-block;
+      margin: 1px;
+      border-radius: 2px;
+    }
+
+    .base10-flat {
+      width: 48px;
+      height: 48px;
+      background: repeating-linear-gradient(0deg, #60a5fa 0px, #60a5fa 4px, #3b82f6 5px),
+        repeating-linear-gradient(90deg, #60a5fa 0px, #60a5fa 4px, #2563eb 5px);
+      box-shadow: 2px 2px 0px #1d4ed8;
+      display: inline-block;
+      margin: 2px;
+      border-radius: 3px;
+    }
+
+    .base10-rod {
+      width: 8px;
+      height: 48px;
+      background: repeating-linear-gradient(0deg, #34d399 0px, #34d399 4px, #059669 5px);
+      box-shadow: 1px 1px 0px #047857;
+      display: inline-block;
+      margin: 2px;
+      border-radius: 2px;
+    }
+
+    .base10-unit {
+      width: 8px;
+      height: 8px;
+      background: #f87171;
+      box-shadow: 1px 1px 0px #b91c1c;
+      display: inline-block;
+      margin: 2px;
+      border-radius: 1px;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-slate-800 flex flex-col items-center p-3 sm:p-6 transition-all">
+
+  <!-- Main Header -->
+  <header class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center text-2xl shadow-md border-2 border-amber-500">
+        🤖
+      </div>
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <span id="txtTitle">Number Sense Quiz Studio</span>
+          <span
+            class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">Grade
+            4/5</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-600 font-medium" id="txtSubtitle">
+          Place Value, Base-10 Blocks, Number Words, Expanded Form & Rounding
+        </p>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex items-center gap-2">
+      <!-- Language Switcher -->
+      <button onclick="toggleLanguage()"
+        class="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-xs sm:text-sm font-bold text-slate-700 transition active:scale-95">
+        <span>🌐</span> <span id="langBtnText">አማርኛ</span>
+      </button>
+
+      <!-- Fullscreen Button -->
+      <button onclick="toggleFullScreen()"
+        class="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-xs sm:text-sm font-bold text-slate-700 transition active:scale-95"
+        title="Toggle Fullscreen (F)">
+        <span id="fsIcon">⛶</span> <span id="fsText">Full Screen</span>
+      </button>
+
+      <!-- Audio Mute -->
+      <button onclick="toggleAudio()"
+        class="p-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-slate-700 text-sm transition">
+        <span id="audioIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Category Nav Tabs -->
+  <div
+    class="w-full max-w-4xl bg-white rounded-2xl p-2 shadow-sm border border-slate-200 mb-4 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto">
+    <button onclick="selectCategory('placeValue')" id="tab_placeValue"
+      class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-white shadow-sm whitespace-nowrap transition">
+      1. What does digit stand for?
+    </button>
+    <button onclick="selectCategory('numberWords')" id="tab_numberWords"
+      class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap transition">
+      2. Number Words
+    </button>
+    <button onclick="selectCategory('mabBlocks')" id="tab_mabBlocks"
+      class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap transition">
+      3. Base-10 Blocks
+    </button>
+    <button onclick="selectCategory('expanded')" id="tab_expanded"
+      class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap transition">
+      4. Expanded Form
+    </button>
+    <button onclick="selectCategory('comparison')" id="tab_comparison"
+      class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap transition">
+      5. Comparison (&lt; or &gt;)
+    </button>
+    <button onclick="selectCategory('rounding')" id="tab_rounding"
+      class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap transition">
+      6. Rounding
+    </button>
+    <button onclick="selectCategory('bonus')" id="tab_bonus"
+      class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-rose-600 hover:bg-rose-50 whitespace-nowrap transition">
+      🌟 Bonus Triple Round
+    </button>
+  </div>
+
+  <!-- Quiz Mode Selector Bar -->
+  <div class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 mb-3 px-2">
+    <div class="flex items-center gap-2 text-xs font-bold">
+      <span class="text-slate-500" id="lblMode">MODE:</span>
+      <button onclick="setQuizSource('original')" id="btnSourceOriginal"
+        class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-sm transition">
+        📄 Quiz Paper Exact (ከፈተናው ወረቀት)
+      </button>
+      <button onclick="setQuizSource('random')" id="btnSourceRandom"
+        class="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 transition">
+        🎲 Generate Practice (ያልተገደበ አዳዲስ)
+      </button>
+    </div>
+
+    <!-- Score & Streak -->
+    <div class="flex items-center gap-3 text-xs sm:text-sm font-bold">
+      <span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full border border-amber-300 flex items-center gap-1">
+        ⭐ <span id="lblScore">Score:</span> <strong id="scoreVal">0</strong>
+      </span>
+      <span
+        class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-300 flex items-center gap-1">
+        🔥 <span id="lblStreak">Streak:</span> <strong id="streakVal">0</strong>
+      </span>
+    </div>
+  </div>
+
+  <!-- Interactive Worksheet Paper Card -->
+  <main class="w-full max-w-4xl worksheet rounded-3xl p-6 sm:p-10 relative overflow-hidden flex flex-col">
+
+    <!-- Student Header & Well Done Sticker -->
+    <div class="w-full flex items-center justify-between border-b-2 border-slate-200 pb-4 mb-6">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-bold" id="lblQuizDoc">Number Sense Quiz
+          Practice</div>
+        <div class="text-xl sm:text-2xl font-extrabold text-slate-800" id="currentCategoryTitle">1. What does the digit
+          stand for in the number?</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:flex flex-col items-end">
+          <span class="text-xs font-bold text-slate-500">Score Sheet:</span>
+          <span class="text-lg font-black text-emerald-600 handwriting">16.5 / 20 ⭐</span>
+        </div>
+        <div
+          class="w-14 h-14 bg-emerald-100 border-2 border-emerald-500 rounded-2xl flex flex-col items-center justify-center rotate-3 shadow-md">
+          <span class="text-lg">🤖</span>
+          <span class="text-[9px] font-black text-emerald-800 uppercase leading-none">Well Done!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Question Dynamic Workspace -->
+    <div id="quizWorkspace" class="w-full min-h-[280px] flex flex-col items-center justify-center text-center py-4">
+      <!-- Injected by JavaScript -->
+    </div>
+
+    <!-- Feedback & Explanation Banner -->
+    <div id="feedbackBanner"
+      class="w-full mt-4 p-4 rounded-2xl hidden transition-all text-sm font-semibold flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span id="feedbackIcon" class="text-2xl"></span>
+        <div>
+          <div id="feedbackTitle" class="font-bold text-base"></div>
+          <div id="feedbackExplanation" class="text-xs sm:text-sm opacity-90 mt-0.5"></div>
+        </div>
+      </div>
+      <button onclick="nextQuestion()"
+        class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold shadow hover:bg-slate-800 active:scale-95 transition ml-3 whitespace-nowrap"
+        id="btnNextQ">
+        Next Question ➔
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Helpful Teacher / Hint Bar -->
+  <div
+    class="w-full max-w-4xl mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between text-xs text-amber-800 font-medium">
+    <div class="flex items-center gap-2">
+      <span class="text-base">💡</span>
+      <span id="teacherTip">Tip: In 152, the 5 is in the tens place, so it stands for 5 × 10 = 50.</span>
+    </div>
+    <span class="text-slate-400 font-bold hidden sm:inline">Press <kbd
+        class="bg-white px-1.5 py-0.5 rounded border border-slate-300 text-slate-700">F</kbd> for Fullscreen</span>
+  </div>
+
+  <script>
+    // State management
+    let curLang = 'en'; // 'en' | 'am'
+    let curCategory = 'placeValue';
+    let quizSource = 'original'; // 'original' | 'random'
+    let score = 0;
+    let streak = 0;
+    let audioOn = true;
+    let synth = null;
+    let activeQuestionIndex = 0;
+    let answered = false;
+
+    // Translations
+    const i18n = {
+      en: {
+        title: "Number Sense Quiz Studio",
+        subtitle: "Place Value, Base-10 Blocks, Number Words, Expanded Form & Rounding",
+        langBtn: "አማርኛ",
+        fsText: "Full Screen",
+        fsExit: "Exit Screen",
+        modeLbl: "MODE:",
+        originalBtn: "📄 Quiz Paper Exact",
+        randomBtn: "🎲 Generate Practice",
+        scoreLbl: "Score:",
+        streakLbl: "Streak:",
+        nextBtn: "Next Question ➔",
+        checkBtn: "Check Answer",
+        categories: {
+          placeValue: "1. What does the digit stand for in the number?",
+          numberWords: "2. Write number words for numerals",
+          mabBlocks: "3. Base-10 Blocks (Expanded & Written)",
+          expanded: "4. Write in expanded form (using numbers)",
+          comparison: "5. Write < (less than) or > (greater than)",
+          rounding: "6. Rounding to the nearest specified place",
+          bonus: "🌟 Bonus: Rounding Triple Challenge (Thousand, Hundred, Ten)"
+        },
+        correct: "Spot on! That's correct!",
+        incorrect: "Not quite! Look at the place value carefully."
+      },
+      am: {
+        title: "የቁጥሮች ግንዛቤ መለማመጃ ስቱዲዮ",
+        subtitle: "የቦታ ዋጋ፣ የመቁጠሪያ ብሎኮች፣ ቁጥሮችን በቃላት መጻፍ፣ የተዘረዘረ ቅርጽ እና ማጠጋጋት",
+        langBtn: "English",
+        fsText: "ሙሉ ማያ",
+        fsExit: "ማያውን ቀንስ",
+        modeLbl: "ሞድ፡",
+        originalBtn: "📄 ከፈተናው ወረቀት",
+        randomBtn: "🎲 ያልተገደበ አዳዲስ",
+        scoreLbl: "ውጤት፡",
+        streakLbl: "ተከታታይ፡",
+        nextBtn: "ቀጣይ ጥያቄ ➔",
+        checkBtn: "መልስ አረጋግጥ",
+        categories: {
+          placeValue: "1. ቁጥሩ በቦታ ዋጋው ምን ያህል ይወክላል?",
+          numberWords: "2. ቁጥሮችን በቃላት መጻፍ",
+          mabBlocks: "3. የመቁጠሪያ ብሎኮች (የተዘረዘረ እና በቃል)",
+          expanded: "4. ቁጥሮችን በተዘረዘረ መልክ መጻፍ",
+          comparison: "5. ያንሳል (<) ወይም ይበልጣል (>) ምልክት አስቀምጥ",
+          rounding: "6. ቁጥሮችን ወደ ቅርብ የቦታ ዋጋ ማጠጋጋት",
+          bonus: "🌟 ቦነስ፡ ወደ ሺህ፣ መቶ እና አሥር ማጠጋጋት ፈተና"
+        },
+        correct: "ትክክል! በጣም ጎበዝ!",
+        incorrect: "አልተመለሰም! የቦታ ዋጋውን በጥንቃቄ ይመልከቱ።"
+      }
+    };
+
+    // Bank of Questions directly from the Quiz
+    const quizBank = {
+      placeValue: [
+        {
+          target: "5", num: 152, place: "tens", correct: "50",
+          options: ["5", "50", "500", "5000"],
+          expEn: "The 5 is in the tens column (5 × 10 = 50).",
+          expAm: "5 ያለው በአሥሮች ቦታ ላይ ስለሆነ 5 × 10 = 50 ይሆናል።"
+        },
+        {
+          target: "5", num: 5508, place: "hundreds", correct: "500",
+          options: ["50", "500", "5000", "5500"],
+          note: "Looking at the underlined hundreds digit 5",
+          expEn: "The hundreds digit 5 stands for 500 (5 × 100).",
+          expAm: "በመቶዎች ቦታ ላይ ያለው 5 ዋጋው 500 (5 × 100) ነው።"
+        },
+        {
+          target: "5", num: 5391, place: "thousands", correct: "5000",
+          options: ["50", "500", "5000", "50000"],
+          expEn: "The 5 is in the thousands column (5 × 1000 = 5000).",
+          expAm: "5 ያለው በሺዎች ቦታ ላይ ስለሆነ 5 × 1000 = 5000 ይሆናል።"
+        }
+      ],
+      numberWords: [
+        {
+          num: 46, context: "Score: (46)",
+          correct: "forty-six",
+          alt: "forty six",
+          mistakeNote: "Notice spelling: 'forty-six' (not fourty)!",
+          expEn: "Standard spelling is 'forty-six' without a 'u'.",
+          expAm: "ትክክለኛው አጻጻፍ 'forty-six' ነው። ('fourty' ተብሎ አይጻፍም)።"
+        },
+        {
+          num: 112, context: "House for Sale: (112 Broadway Street)",
+          correct: "one hundred twelve",
+          alt: "one hundred and twelve",
+          mistakeNote: "On the paper this had a correction: 112 is one hundred twelve (or twelve, not twenty).",
+          expEn: "112 = One hundred twelve (1 hundred + 12).",
+          expAm: "112 = አንድ መቶ አስራ ሁለት (One hundred twelve)።"
+        }
+      ],
+      mabBlocks: [
+        {
+          thousands: 7, hundreds: 1, tens: 9, ones: 8,
+          total: 7198,
+          paperMistakeRef: "On the quiz: 7 cubes were shown, student originally wrote 9 and was corrected to 7!",
+          expEn: "Count the large cubes: 7 thousands + 1 hundred + 9 tens + 8 ones = 7,198 (Seven thousand one hundred ninety-eight).",
+          expAm: "ትላልቆቹን ኩቦች ስንቆጥር፡ 7 ሺህ + 1 መቶ + 9 አሥር + 8 አንድ = 7,198 (ሰባት ሺህ አንድ መቶ ዘጠና ስምንት)።"
+        }
+      ],
+      expanded: [
+        {
+          num: 5183,
+          parts: [5000, 100, 80, 3],
+          expEn: "5183 = 5000 + 100 + 80 + 3",
+          expAm: "5183 = 5000 + 100 + 80 + 3"
+        },
+        {
+          num: 309,
+          parts: [300, 9],
+          expEn: "309 = 300 + 9 (Zero in tens place contributes 0)",
+          expAm: "309 = 300 + 9 (በአሥሮች ቦታ ዜሮ ስለሆነ አይጻፍም)"
+        }
+      ],
+      comparison: [
+        { left: 4075, right: 4005, ans: ">", expEn: "4075 has 7 tens, while 4005 has 0 tens. So 4075 > 4005.", expAm: "4075 ሰባት አሥሮች አሉት፣ 4005 ደግሞ ዜሮ አሥር አለው። ስለዚህ 4075 > 4005።" },
+        { left: 8612, right: 8611, ans: ">", expEn: "8612 has 2 ones, while 8611 has 1 one. So 8612 > 8611.", expAm: "8612 ሁለት አንድነቶች አሉት፣ 8611 ደግሞ አንድ ብቻ። ስለዚህ 8612 > 8611።" },
+        { left: 3845, right: 3855, ans: "<", expEn: "3845 has 4 tens, while 3855 has 5 tens. So 3845 < 3855.", expAm: "3845 አራት አሥሮች አሉት፣ 3855 ደግሞ አምስት አሥሮች አሉት። ስለዚህ 3845 < 3855።" }
+      ],
+      rounding: [
+        {
+          num: 4268, roundTo: "thousand", correct: 4000,
+          rule: "Look at hundreds (2). 2 < 5, round down to 4000.",
+          expEn: "The hundreds digit is 2 (less than 5), so round down to 4,000.",
+          expAm: "የመቶዎች ቁጥር 2 (ከ 5 ያነሰ) ስለሆነ ወደ 4,000 ወደ ታች ይጠጋጋል።"
+        },
+        {
+          num: 1922, roundTo: "thousand", correct: 2000,
+          quizCorrectionNotice: "⚠️ On the test, student wrote 1000 and was marked incorrect! 9 in hundreds rounds UP to 2000!",
+          rule: "Look at hundreds (9). 9 >= 5, round UP to 2000!",
+          expEn: "The hundreds digit is 9 (5 or more), so 1922 rounds UP to 2,000 (not 1000)!",
+          expAm: "የመቶዎች ቁጥር 9 (ከ 5 እኩል ወይም የሚበልጥ) ስለሆነ ወደ 2,000 ወደ ላይ ይጠጋጋል!"
+        },
+        {
+          num: 958, roundTo: "thousand", correct: 1000,
+          quizCorrectionNotice: "Student initially wrote 900 then corrected to 1000.",
+          rule: "958 is closest to 1000 (hundreds is 9 >= 5).",
+          expEn: "958 rounded to the nearest thousand is 1,000.",
+          expAm: "958 ወደ ቅርብ ሺህ ሲጠጋጋ 1,000 ይሆናል።"
+        },
+        {
+          num: 5177, roundTo: "thousand", correct: 5000,
+          rule: "Hundreds digit is 1 < 5, round down to 5000.",
+          expEn: "Hundreds digit is 1, so round down to 5,000.",
+          expAm: "የመቶዎች ቁጥር 1 ስለሆነ ወደ 5,000 ይጠጋጋል።"
+        }
+      ],
+      bonus: [
+        {
+          num: 7642,
+          thousand: 8000,
+          hundred: 7600,
+          ten: 7640,
+          mistakesNoted: "From Page 2 of the quiz: 7642 to nearest thousand is 8000; hundred is 7600; ten is 7640!",
+          expEn: "Thousands: 7,642 -> hundreds is 6 >= 5 -> 8000. Hundreds: tens is 4 < 5 -> 7600. Tens: ones is 2 < 5 -> 7640.",
+          expAm: "ሺህ፡ 7,642 (መቶው 6 ስለሆነ ወደ 8000 ይወጣል)። መቶ፡ (አሥሩ 4 ስለሆነ 7600)። አሥር፡ (አንዱ 2 ስለሆነ 7640)።"
+        }
+      ]
+    };
+
+    // Audio SFX
+    function playTone(type) {
+      if (!audioOn) return;
+      try {
+        if (!synth) synth = new Tone.Synth().toDestination();
+        if (Tone.context.state !== 'running') Tone.start();
+        if (type === 'correct') {
+          synth.triggerAttackRelease("C5", "16n", "+0");
+          synth.triggerAttackRelease("G5", "16n", "+0.1");
+          synth.triggerAttackRelease("C6", "8n", "+0.2");
+        } else {
+          synth.triggerAttackRelease("E3", "8n", "+0");
+          synth.triggerAttackRelease("C3", "8n", "+0.15");
+        }
+      } catch (e) {
+        console.warn("Audio Context init pending");
+      }
+    }
+
+    function toggleAudio() {
+      audioOn = !audioOn;
+      document.getElementById('audioIcon').textContent = audioOn ? '🔊' : '🔇';
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => alert(err.message));
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFs = !!document.fullscreenElement;
+      document.getElementById('fsIcon').textContent = isFs ? '↙' : '⛶';
+      document.getElementById('fsText').textContent = isFs ? i18n[curLang].fsExit : i18n[curLang].fsText;
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') toggleFullScreen();
+      if (e.key === 'Enter') {
+        const checkBtn = document.getElementById('btnSubmitAnswer');
+        if (checkBtn && !answered) checkBtn.click();
+        else if (answered) nextQuestion();
+      }
+    });
+
+    function toggleLanguage() {
+      curLang = curLang === 'en' ? 'am' : 'en';
+      document.getElementById('langBtnText').textContent = i18n[curLang].langBtn;
+      document.getElementById('txtTitle').textContent = i18n[curLang].title;
+      document.getElementById('txtSubtitle').textContent = i18n[curLang].subtitle;
+      document.getElementById('lblMode').textContent = i18n[curLang].modeLbl;
+      document.getElementById('btnSourceOriginal').textContent = i18n[curLang].originalBtn;
+      document.getElementById('btnSourceRandom').textContent = i18n[curLang].randomBtn;
+      document.getElementById('lblScore').textContent = i18n[curLang].scoreLbl;
+      document.getElementById('lblStreak').textContent = i18n[curLang].streakLbl;
+      document.getElementById('btnNextQ').textContent = i18n[curLang].nextBtn;
+      updateCategoryTitles();
+      loadCurrentQuestion();
+    }
+
+    function updateCategoryTitles() {
+      document.getElementById('currentCategoryTitle').textContent = i18n[curLang].categories[curCategory];
+    }
+
+    function selectCategory(cat) {
+      curCategory = cat;
+      activeQuestionIndex = 0;
+
+      // Update tab styles
+      const tabs = ['placeValue', 'numberWords', 'mabBlocks', 'expanded', 'comparison', 'rounding', 'bonus'];
+      tabs.forEach(t => {
+        const el = document.getElementById('tab_' + t);
+        if (t === cat) {
+          el.className = "px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-white shadow-sm whitespace-nowrap transition";
+        } else {
+          el.className = "px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap transition";
+        }
+      });
+
+      updateCategoryTitles();
+      loadCurrentQuestion();
+    }
+
+    function setQuizSource(src) {
+      quizSource = src;
+      activeQuestionIndex = 0;
+      document.getElementById('btnSourceOriginal').className = src === 'original'
+        ? 'px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-sm transition'
+        : 'px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 transition';
+      document.getElementById('btnSourceRandom').className = src === 'random'
+        ? 'px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-sm transition'
+        : 'px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 transition';
+      loadCurrentQuestion();
+    }
+
+    function loadCurrentQuestion() {
+      answered = false;
+      document.getElementById('feedbackBanner').classList.add('hidden');
+      const ws = document.getElementById('quizWorkspace');
+      ws.innerHTML = '';
+
+      if (curCategory === 'placeValue') renderPlaceValueQ(ws);
+      else if (curCategory === 'numberWords') renderNumberWordsQ(ws);
+      else if (curCategory === 'mabBlocks') renderMabBlocksQ(ws);
+      else if (curCategory === 'expanded') renderExpandedQ(ws);
+      else if (curCategory === 'comparison') renderComparisonQ(ws);
+      else if (curCategory === 'rounding') renderRoundingQ(ws);
+      else if (curCategory === 'bonus') renderBonusQ(ws);
+    }
+
+    // --- QUESTION RENDERERS ---
+
+    // 1. Digit Stand For (Place Value)
+    // 1. Digit Stand For (Place Value) - FIXED FOR DUPLICATE DIGITS
+    function renderPlaceValueQ(container) {
+      let q;
+      if (quizSource === 'original') {
+        const items = [
+          {
+            num: 152,
+            targetIndex: 1, // index of '5' (tens)
+            placeNameEn: "tens",
+            placeNameAm: "አሥሮች",
+            options: ["5", "50", "500", "5000"],
+            expEn: "The highlighted 5 is in the tens column (5 × 10 = 50).",
+            expAm: "በቀይ የደመቀው 5 በአሥሮች ቦታ ላይ ስለሆነ 5 × 10 = 50 ይሆናል።"
+          },
+          {
+            num: 5508,
+            targetIndex: 1, // second digit: hundreds 5
+            placeNameEn: "hundreds",
+            placeNameAm: "መቶዎች",
+            options: ["50", "500", "5000", "5500"],
+            expEn: "The highlighted 5 is in the hundreds column (5 × 100 = 500).",
+            expAm: "በቀይ የደመቀው 5 በመቶዎች ቦታ ላይ ስለሆነ 5 × 100 = 500 ይሆናል።"
+          },
+          {
+            num: 5391,
+            targetIndex: 0, // thousands 5
+            placeNameEn: "thousands",
+            placeNameAm: "ሺዎች",
+            options: ["50", "500", "5000", "50000"],
+            expEn: "The highlighted 5 is in the thousands column (5 × 1000 = 5000).",
+            expAm: "በቀይ የደመቀው 5 በሺዎች ቦታ ላይ ስለሆነ 5 × 1000 = 5000 ይሆናል።"
+          }
+        ];
+        const selected = items[activeQuestionIndex % items.length];
+        const numStr = selected.num.toString();
+        const digitChar = numStr[selected.targetIndex];
+        const placeWeight = Math.pow(10, numStr.length - 1 - selected.targetIndex);
+        const correctVal = (parseInt(digitChar, 10) * placeWeight).toString();
+
+        q = {
+          numStr: numStr,
+          targetIndex: selected.targetIndex,
+          targetDigit: digitChar,
+          correct: correctVal,
+          options: selected.options,
+          expEn: selected.expEn,
+          expAm: selected.expAm
+        };
+      } else {
+        // Random Generator Mode (e.g. 5457)
+        const randNum = Math.floor(Math.random() * 8999) + 1000;
+        const numStr = randNum.toString();
+
+        // Pick an exact index position from 0 to 3
+        const targetIndex = Math.floor(Math.random() * numStr.length);
+        const digitChar = numStr[targetIndex];
+        const digitVal = parseInt(digitChar, 10);
+
+        const placePower = numStr.length - 1 - targetIndex;
+        const correctVal = (digitVal * Math.pow(10, placePower)).toString();
+
+        const placesEn = ['ones', 'tens', 'hundreds', 'thousands'];
+        const placesAm = ['አንድነቶች', 'አሥሮች', 'መቶዎች', 'ሺዎች'];
+        const pEn = placesEn[placePower];
+        const pAm = placesAm[placePower];
+
+        // Generate 4 distinct plausible options
+        const optsSet = new Set([
+          (digitVal).toString(),
+          (digitVal * 10).toString(),
+          (digitVal * 100).toString(),
+          (digitVal * 1000).toString()
+        ]);
+
+        q = {
+          numStr: numStr,
+          targetIndex: targetIndex,
+          targetDigit: digitChar,
+          correct: correctVal,
+          options: Array.from(optsSet).sort(() => 0.5 - Math.random()),
+          expEn: `The highlighted digit ${digitChar} is at index ${targetIndex + 1} (${pEn} place), so it stands for ${correctVal}.`,
+          expAm: `በቀይ የደመቀው ${digitChar} ያለው በ${pAm} ቦታ ላይ ስለሆነ ዋጋው ${correctVal} ነው።`
+        };
+      }
+
+      container.innerHTML = `
+        <div class="mb-4">
+          <span class="text-sm font-bold text-slate-500 uppercase">Question:</span>
+          <div class="text-4xl sm:text-6xl font-black text-slate-900 mt-2 font-mono tracking-widest">
+            ${highlightDigitByIndex(q.numStr, q.targetIndex)}
+          </div>
+          <p class="text-slate-600 text-sm mt-3 font-semibold">
+            ${curLang === 'en'
+          ? `What does the highlighted digit <strong>${q.targetDigit}</strong> stand for?`
+          : `በቀይ የደመቀው <strong>${q.targetDigit}</strong> ቁጥር ዋጋው ስንት ነው?`}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-md mt-2">
+          ${q.options.map(opt => `
+            <button onclick="handleOptionChoice('${opt}', '${q.correct}', '${escape(q.expEn)}', '${escape(q.expAm)}')" 
+                    class="opt-btn py-3 px-4 bg-slate-50 hover:bg-amber-100 hover:border-amber-400 border-2 border-slate-300 rounded-2xl text-xl font-black text-slate-800 transition active:scale-95 shadow-sm">
+              ${opt}
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // New helper: Highlights only the digit at the specified index position
+    function highlightDigitByIndex(numStr, targetIndex) {
+      return numStr.split('').map((ch, idx) => {
+        if (idx === targetIndex) {
+          return `<span class="text-rose-600 underline decoration-amber-400 decoration-4 font-extrabold">${ch}</span>`;
+        }
+        return `<span class="text-slate-800">${ch}</span>`;
+      }).join('');
+    }
+
+    function highlightDigit(numStr, target) {
+      let replaced = false;
+      return numStr.split('').map(ch => {
+        if (ch === target && !replaced) {
+          replaced = true;
+          return `<span class="text-rose-600 underline decoration-amber-400 decoration-4">${ch}</span>`;
+        }
+        return ch;
+      }).join('');
+    }
+
+    // 2. Number Words
+    function renderNumberWordsQ(container) {
+      let q = quizBank.numberWords[activeQuestionIndex % quizBank.numberWords.length];
+      container.innerHTML = `
+        <div class="w-full max-w-md bg-amber-50/60 border-2 border-dashed border-amber-300 rounded-3xl p-6 mb-4">
+          <div class="text-xs font-bold text-amber-700 uppercase">${q.context}</div>
+          <div class="text-6xl font-black text-slate-900 my-3 font-mono">(${q.num})</div>
+          <p class="text-xs text-slate-500 mb-3">${curLang === 'en' ? 'Type the number in words below (spelling matters!):' : 'ቁጥሩን በቃላት በእንግሊዝኛ ይጻፉ፡'}</p>
+          <input type="text" id="wordInput" class="w-full text-center px-4 py-3 text-xl font-bold bg-white border-2 border-slate-300 rounded-2xl focus:border-amber-500 focus:outline-none" placeholder="e.g. forty-six">
+        </div>
+        <button id="btnSubmitAnswer" onclick="checkWordInput('${q.correct}', '${q.alt || ''}', '${escape(q.expEn)}', '${escape(q.expAm)}')" 
+                class="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold shadow hover:bg-slate-800 transition active:scale-95">
+          ${i18n[curLang].checkBtn}
+        </button>
+      `;
+    }
+
+    function checkWordInput(correct, alt, expEn, expAm) {
+      const val = document.getElementById('wordInput').value.trim().toLowerCase().replace(/\s+/g, ' ');
+      const cleanCorrect = correct.toLowerCase();
+      const cleanAlt = alt ? alt.toLowerCase() : '';
+      const isRight = (val === cleanCorrect || (cleanAlt && val === cleanAlt));
+      showFeedback(isRight, unescape(expEn), unescape(expAm));
+    }
+
+    // 3. MAB Blocks
+    function renderMabBlocksQ(container) {
+      let q = quizBank.mabBlocks[0];
+      container.innerHTML = `
+        <div class="mb-4">
+          <div class="text-xs font-bold text-slate-500 mb-2">${curLang === 'en' ? 'Examine the Base-10 blocks diagram from Question 3:' : 'በጥያቄ 3 ላይ የቀረቡትን ብሎኮች ይመልከቱ፡'}</div>
+          
+          <!-- Visual Blocks representation -->
+          <div class="flex flex-wrap items-center justify-center gap-3 p-4 bg-slate-100 rounded-2xl border border-slate-200">
+            <div class="flex flex-col items-center">
+              <div class="text-xs font-bold text-amber-700">7 Thousands (Cubes)</div>
+              <div class="flex flex-wrap justify-center max-w-[200px]">
+                ${'<div class="base10-cube"></div>'.repeat(7)}
+              </div>
+            </div>
+            <div class="flex flex-col items-center">
+              <div class="text-xs font-bold text-blue-700">1 Hundred (Flat)</div>
+              <div class="base10-flat"></div>
+            </div>
+            <div class="flex flex-col items-center">
+              <div class="text-xs font-bold text-emerald-700">9 Tens (Rods)</div>
+              <div class="flex flex-wrap justify-center">
+                ${'<div class="base10-rod"></div>'.repeat(9)}
+              </div>
+            </div>
+            <div class="flex flex-col items-center">
+              <div class="text-xs font-bold text-rose-700">8 Ones (Units)</div>
+              <div class="flex flex-wrap justify-center max-w-[50px]">
+                ${'<div class="base10-unit"></div>'.repeat(8)}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 text-sm font-bold text-slate-700">
+            <span class="text-amber-600">7</span> thousands + 
+            <span class="text-blue-600">1</span> hundred + 
+            <span class="text-emerald-600">9</span> tens + 
+            <span class="text-rose-600">8</span> ones = ?
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="number" id="mabInput" class="w-36 text-center px-4 py-2.5 text-2xl font-black bg-white border-2 border-slate-300 rounded-xl" placeholder="7198">
+          <button id="btnSubmitAnswer" onclick="checkMabAnswer(7198, '${escape(q.expEn)}', '${escape(q.expAm)}')" class="px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold shadow hover:bg-slate-800">
+            ${i18n[curLang].checkBtn}
+          </button>
+        </div>
+      `;
+    }
+
+    function checkMabAnswer(correct, expEn, expAm) {
+      const val = parseInt(document.getElementById('mabInput').value, 10);
+      showFeedback(val === correct, unescape(expEn), unescape(expAm));
+    }
+
+    // 4. Expanded Form
+    function renderExpandedQ(container) {
+      let q = quizBank.expanded[activeQuestionIndex % quizBank.expanded.length];
+      container.innerHTML = `
+        <div class="mb-4">
+          <span class="text-xs font-bold text-slate-400 uppercase">Expanded Form (Numbers)</span>
+          <div class="text-5xl font-black text-slate-900 mt-2 font-mono">${q.num}</div>
+          <p class="text-xs text-slate-500 mt-2">${curLang === 'en' ? 'Fill in the blanks with the correct values:' : 'ባዶ ቦታዎችን በትክክለኛ እሴቶች ይሙሉ፡'}</p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-2 text-xl font-bold font-mono">
+          ${q.parts.map((p, idx) => `
+            <input type="number" id="exp_${idx}" class="w-24 text-center px-2 py-2 bg-white border-2 border-slate-300 rounded-xl focus:border-amber-500" placeholder="?">
+            ${idx < q.parts.length - 1 ? '<span class="text-slate-400">+</span>' : ''}
+          `).join('')}
+        </div>
+
+        <button id="btnSubmitAnswer" onclick="checkExpandedForm(${JSON.stringify(q.parts)}, '${escape(q.expEn)}', '${escape(q.expAm)}')" 
+                class="mt-5 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold shadow hover:bg-slate-800">
+          ${i18n[curLang].checkBtn}
+        </button>
+      `;
+    }
+
+    function checkExpandedForm(parts, expEn, expAm) {
+      let correct = true;
+      for (let i = 0; i < parts.length; i++) {
+        const val = parseInt(document.getElementById(`exp_${i}`).value, 10);
+        if (val !== parts[i]) {
+          correct = false;
+          break;
+        }
+      }
+      showFeedback(correct, unescape(expEn), unescape(expAm));
+    }
+
+    // 5. Comparison
+    function renderComparisonQ(container) {
+      let q;
+      if (quizSource === 'original') {
+        q = quizBank.comparison[activeQuestionIndex % quizBank.comparison.length];
+      } else {
+        const n1 = Math.floor(Math.random() * 8999) + 1000;
+        const diff = (Math.floor(Math.random() * 20) + 1) * (Math.random() > 0.5 ? 1 : -1);
+        const n2 = n1 + diff;
+        q = {
+          left: n1, right: n2, ans: n1 > n2 ? '>' : '<',
+          expEn: `${n1} is ${n1 > n2 ? 'greater than' : 'less than'} ${n2}.`,
+          expAm: `${n1} ከ ${n2} ${n1 > n2 ? 'ይበልጣል' : 'ያንሳል'}።`
+        };
+      }
+
+      container.innerHTML = `
+        <div class="mb-6 flex items-center justify-center gap-6 text-4xl sm:text-6xl font-black font-mono">
+          <span class="text-blue-600">${q.left}</span>
+          <div class="w-16 h-16 border-2 border-dashed border-amber-400 rounded-2xl flex items-center justify-center text-amber-600 text-3xl" id="compBox">?</div>
+          <span class="text-emerald-600">${q.right}</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <button onclick="handleCompChoice('<', '${q.ans}', '${escape(q.expEn)}', '${escape(q.expAm)}')" class="px-8 py-3 bg-amber-100 hover:bg-amber-200 border-2 border-amber-400 rounded-2xl text-3xl font-black text-amber-900 active:scale-95 transition shadow-sm">
+            &lt;
+          </button>
+          <button onclick="handleCompChoice('>', '${q.ans}', '${escape(q.expEn)}', '${escape(q.expAm)}')" class="px-8 py-3 bg-amber-100 hover:bg-amber-200 border-2 border-amber-400 rounded-2xl text-3xl font-black text-amber-900 active:scale-95 transition shadow-sm">
+            &gt;
+          </button>
+        </div>
+      `;
+    }
+
+    function handleCompChoice(choice, ans, expEn, expAm) {
+      document.getElementById('compBox').textContent = choice;
+      showFeedback(choice === ans, unescape(expEn), unescape(expAm));
+    }
+
+    // 6. Rounding
+    function renderRoundingQ(container) {
+      let q;
+      if (quizSource === 'original') {
+        q = quizBank.rounding[activeQuestionIndex % quizBank.rounding.length];
+      } else {
+        const n = Math.floor(Math.random() * 8999) + 1000;
+        const rounded = Math.round(n / 1000) * 1000;
+        q = {
+          num: n, roundTo: "thousand", correct: rounded,
+          rule: `Look at hundreds digit. If >= 5 round up, else round down.`,
+          expEn: `${n} rounded to nearest thousand is ${rounded}.`,
+          expAm: `${n} ወደ ቅርብ ሺህ ሲጠጋጋ ${rounded} ይሆናል።`
+        };
+      }
+
+      container.innerHTML = `
+        <div class="mb-4">
+          <span class="text-xs font-bold text-slate-500 uppercase">${curLang === 'en' ? 'Round to the nearest thousand:' : 'ወደ ቅርብ ሺህ አጠጋጋ፡'}</span>
+          <div class="text-6xl font-black text-slate-900 my-2 font-mono">${q.num}</div>
+          ${q.quizCorrectionNotice ? `<div class="text-xs bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-full font-bold inline-block mb-2">${q.quizCorrectionNotice}</div>` : ''}
+        </div>
+
+        <div class="flex items-center gap-3">
+          <input type="number" id="roundInput" class="w-36 text-center px-4 py-2.5 text-2xl font-black bg-white border-2 border-slate-300 rounded-xl" placeholder="?">
+          <button id="btnSubmitAnswer" onclick="checkRoundingAnswer(${q.correct}, '${escape(q.expEn)}', '${escape(q.expAm)}')" class="px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold shadow hover:bg-slate-800">
+            ${i18n[curLang].checkBtn}
+          </button>
+        </div>
+      `;
+    }
+
+    function checkRoundingAnswer(correct, expEn, expAm) {
+      const val = parseInt(document.getElementById('roundInput').value, 10);
+      showFeedback(val === correct, unescape(expEn), unescape(expAm));
+    }
+
+    // 7. Bonus Triple Challenge
+    function renderBonusQ(container) {
+      let q = quizBank.bonus[0];
+      container.innerHTML = `
+        <div class="mb-4">
+          <span class="text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200 uppercase">🌟 Bonus Challenge</span>
+          <div class="text-6xl font-black text-slate-900 my-2 font-mono tracking-widest text-emerald-700">${q.num}</div>
+          <p class="text-xs text-slate-500">${curLang === 'en' ? 'Round this number to the three requested places:' : 'ይህን ቁጥር ወደ ሺህ፣ መቶ እና አሥር አጠጋጋ፡'}</p>
+        </div>
+
+        <div class="w-full max-w-sm space-y-3 text-left font-bold text-sm">
+          <div class="flex items-center justify-between p-3 bg-slate-50 border rounded-xl">
+            <span class="text-amber-800">1. To Nearest Thousand:</span>
+            <input type="number" id="bonus_th" class="w-28 text-center px-2 py-1 bg-white border-2 rounded-lg font-mono" placeholder="?">
+          </div>
+          <div class="flex items-center justify-between p-3 bg-slate-50 border rounded-xl">
+            <span class="text-blue-800">2. To Nearest Hundred:</span>
+            <input type="number" id="bonus_h" class="w-28 text-center px-2 py-1 bg-white border-2 rounded-lg font-mono" placeholder="?">
+          </div>
+          <div class="flex items-center justify-between p-3 bg-slate-50 border rounded-xl">
+            <span class="text-emerald-800">3. To Nearest Ten:</span>
+            <input type="number" id="bonus_t" class="w-28 text-center px-2 py-1 bg-white border-2 rounded-lg font-mono" placeholder="?">
+          </div>
+        </div>
+
+        <button id="btnSubmitAnswer" onclick="checkBonus(${q.thousand}, ${q.hundred}, ${q.ten}, '${escape(q.expEn)}', '${escape(q.expAm)}')" 
+                class="mt-4 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold shadow hover:bg-slate-800">
+          ${i18n[curLang].checkBtn}
+        </button>
+      `;
+    }
+
+    function checkBonus(th, h, t, expEn, expAm) {
+      const vTh = parseInt(document.getElementById('bonus_th').value, 10);
+      const vH = parseInt(document.getElementById('bonus_h').value, 10);
+      const vT = parseInt(document.getElementById('bonus_t').value, 10);
+      const isRight = (vTh === th && vH === h && vT === t);
+      showFeedback(isRight, unescape(expEn), unescape(expAm));
+    }
+
+    // Common feedback handler
+    function handleOptionChoice(choice, correct, expEn, expAm) {
+      showFeedback(choice === correct, unescape(expEn), unescape(expAm));
+    }
+
+    function showFeedback(isCorrect, expEn, expAm) {
+      answered = true;
+      const banner = document.getElementById('feedbackBanner');
+      const icon = document.getElementById('feedbackIcon');
+      const title = document.getElementById('feedbackTitle');
+      const exp = document.getElementById('feedbackExplanation');
+
+      banner.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'border-emerald-300', 'bg-rose-50', 'text-rose-900', 'border-rose-300');
+
+      if (isCorrect) {
+        score += 10;
+        streak += 1;
+        playTone('correct');
+        confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+
+        banner.classList.add('bg-emerald-50', 'text-emerald-900', 'border', 'border-emerald-300');
+        icon.textContent = '🎉';
+        title.textContent = i18n[curLang].correct;
+      } else {
+        streak = 0;
+        playTone('wrong');
+        banner.classList.add('bg-rose-50', 'text-rose-900', 'border', 'border-rose-300');
+        icon.textContent = '💡';
+        title.textContent = i18n[curLang].incorrect;
+      }
+
+      exp.textContent = curLang === 'en' ? expEn : expAm;
+      document.getElementById('scoreVal').textContent = score;
+      document.getElementById('streakVal').textContent = streak;
+    }
+
+    function nextQuestion() {
+      activeQuestionIndex++;
+      loadCurrentQuestion();
+    }
+
+    // Init
+    updateCategoryTitles();
+    loadCurrentQuestion();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grade 4 Learning Studio: Interactive Curriculum Hub</title>
+  <style>
+    :root {
+      --sidebar-w: 320px;
+      --primary: #c51d24;
+      --primary-dark: #8b0f14;
+      --secondary: #0284c7;
+      --secondary-dark: #0369a1;
+      --bg: #0f172a;
+      --sidebar-bg: #1e293b;
+      --card-bg: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #475569;
+      --accent: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP GLOBAL HEADER */
+    header {
+      height: 64px;
+      background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-size: 1.8rem;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .brand-sub {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .badge-grade {
+      background: var(--primary);
+      color: white;
+      font-weight: 800;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    /* MAIN APP WORKSPACE */
+    .studio-workspace {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+
+    /* SIDEBAR NAVIGATION */
+    aside {
+      width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .nav-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .nav-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+
+    .nav-section-title {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #38bdf8;
+      margin: 16px 0 8px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lesson-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #cbd5e1;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .lesson-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #ffffff;
+      transform: translateX(3px);
+    }
+
+    .lesson-item.active {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);
+    }
+
+    .lesson-icon {
+      font-size: 1.3rem;
+    }
+
+    .lesson-text h4 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .lesson-text p {
+      margin: 2px 0 0 0;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .lesson-item.active .lesson-text p {
+      color: #e0f2fe;
+    }
+
+    /* VIEWPORT STAGE FOR RUNNING PAGES */
+    .viewport-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #0b1120;
+      position: relative;
+    }
+
+    .stage-toolbar {
+      height: 48px;
+      background: #1e293b;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+    }
+
+    .stage-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stage-title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .curriculum-tag {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #047857;
+      color: #ecfdf5;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      background: #334155;
+      border: 1px solid var(--border);
+      color: #f8fafc;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .tool-btn:hover {
+      background: #475569;
+    }
+
+    .iframe-holder {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #ffffff;
+    }
+
+    iframe#stageFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* FUTURE EXPANSION EMPTY STATE */
+    .empty-state {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP HEADER -->
+  <!-- Inside header in index.html -->
+  <header>
+    <div class="brand-wrap">
+      <span class="brand-logo">🍁</span>
+      <div>
+        <h1 class="brand-title">The True North Quest</h1>
+        <p class="brand-sub">Interactive Elementary Learning Hub • Grades 4 & 5</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="badge-grade">TheTrueNorthQuest.com</span>
+      <button class="tool-btn" onclick="toggleSidebar()" title="Toggle Menu">☰ Menu</button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <div class="studio-workspace">
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <span>Lesson Modules</span>
+        <span id="moduleCount" style="color:#38bdf8;">8 Apps</span>
+      </div>
+
+      <div class="nav-scroll" id="navModuleList">
+        <!-- Rendered dynamically from LESSONS_REGISTRY -->
+      </div>
+    </aside>
+
+    <!-- ACTIVE LESSON STAGE -->
+    <main class="viewport-stage">
+      <div class="stage-toolbar">
+        <div class="stage-title-wrap">
+          <h3 id="currentLessonTitle" class="stage-title">Canada Animated Driving Practice</h3>
+          <span id="currentCurriculum" class="curriculum-tag">Curriculum: B3.4, B3.7</span>
+        </div>
+        <div class="toolbar-actions">
+          <button class="tool-btn" onclick="reloadCurrentLesson()" title="Restart Activity">🔄 Reload</button>
+          <button class="tool-btn" onclick="openStandalone()" title="Open full screen in a new window">↗ Open
+            Standalone</button>
+        </div>
+      </div>
+
+      <div class="iframe-holder">
+        <iframe id="stageFrame" src="canada_car_driving_box_map.html"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // =========================================================================
+    // LESSONS REGISTRY: Add future HTML files here to expand the studio!
+    // =========================================================================
+    const LESSONS_REGISTRY = [
+      // CATEGORY 1: SOCIAL STUDIES - CANADA
+      {
+        category: "🍁 Social Studies: Canada",
+        items: [
+          {
+            id: "car_driver",
+            title: "Car Driving Practice",
+            desc: "Animated sports car & directional arrows",
+            file: "canada_car_driving_box_map.html",
+            icon: "🚗",
+            curriculum: "Social Studies: B3.4, B3.7"
+          },
+          {
+            id: "box_vector_map",
+            title: "Visual Vector Box Map",
+            desc: "Schematic cheat-sheet with clear icons",
+            file: "canada_box_map_vector_icons.html",
+            icon: "🗺️",
+            curriculum: "Social Studies: B3.4, B3.5"
+          },
+          {
+            id: "cardinal_studio",
+            title: "Cardinal Directions Studio",
+            desc: "Rotating compass & speed flight game",
+            file: "cardinal_directions_studio.html",
+            icon: "🧭",
+            curriculum: "Social Studies: B3.7"
+          },
+          {
+            id: "canada_complete",
+            title: "Canada Complete Study Hub",
+            desc: "Density simulator, mnemonics & quiz",
+            file: "canada_complete_grade4_hub.html",
+            icon: "🇨🇦",
+            curriculum: "Social Studies: B3.4, B3.5, B3.7"
+          }
+        ]
+      },
+
+      // CATEGORY 2: MATHEMATICS & NUMBER SENSE
+      {
+        category: "🔢 Mathematics: Number Sense",
+        items: [
+          {
+            id: "number_sense",
+            title: "Number Sense Studio",
+            desc: "Place value, expanded form & operations",
+            file: "number_sense_studio.html",
+            icon: "🧠",
+            curriculum: "Math: B1.1, B1.2"
+          },
+          {
+            id: "mental_math",
+            title: "Mental Math Arena",
+            desc: "Speed arithmetic & calculation drills",
+            file: "mental_math_studio.html",
+            icon: "⚡",
+            curriculum: "Math: B2.1, B2.2"
+          },
+          {
+            id: "rounding_line",
+            title: "Rounding Number Line",
+            desc: "Visual interactive rounding to 10s & 100s",
+            file: "rounding_number_line.html",
+            icon: "📏",
+            curriculum: "Math: B1.3"
+          }
+        ]
+      },
+
+      // CATEGORY 3: PRINTABLES & EVALUATION
+      {
+        category: "🖨️ Printable Worksheet Generators",
+        items: [
+          {
+            id: "quiz_gen_1",
+            title: "Number Sense Quiz Generator",
+            desc: "Generate custom printed student quizzes",
+            file: "printable_number_sense_quiz_generator.html",
+            icon: "📄",
+            curriculum: "Assessment Tool"
+          }
+        ]
+      }
+    ];
+
+    let activeLesson = LESSONS_REGISTRY[0].items[0];
+
+    // Build the sidebar UI dynamically
+    function buildSidebar() {
+      const container = document.getElementById("navModuleList");
+      container.innerHTML = "";
+      let totalCount = 0;
+
+      LESSONS_REGISTRY.forEach(group => {
+        const titleEl = document.createElement("div");
+        titleEl.className = "nav-section-title";
+        titleEl.textContent = group.category;
+        container.appendChild(titleEl);
+
+        group.items.forEach(item => {
+          totalCount++;
+          const el = document.createElement("div");
+          el.className = `lesson-item ${item.id === activeLesson.id ? 'active' : ''}`;
+          el.id = `item-${item.id}`;
+          el.onclick = () => loadLesson(item);
+          el.innerHTML = `
+            <span class="lesson-icon">${item.icon}</span>
+            <div class="lesson-text">
+              <h4>${item.title}</h4>
+              <p>${item.desc}</p>
+            </div>
+          `;
+          container.appendChild(el);
+        });
+      });
+
+      document.getElementById("moduleCount").textContent = `${totalCount} Modules`;
+    }
+
+    // Load an activity into the viewport iframe
+    function loadLesson(item) {
+      activeLesson = item;
+      document.querySelectorAll(".lesson-item").forEach(el => el.classList.remove("active"));
+      const target = document.getElementById(`item-${item.id}`);
+      if (target) target.classList.add("active");
+
+      document.getElementById("currentLessonTitle").textContent = item.title;
+      document.getElementById("currentCurriculum").textContent = `Curriculum: ${item.curriculum}`;
+
+      const frame = document.getElementById("stageFrame");
+      frame.src = item.file;
+    }
+
+    function reloadCurrentLesson() {
+      const frame = document.getElementById("stageFrame");
+      frame.src = frame.src;
+    }
+
+    function openStandalone() {
+      if (activeLesson && activeLesson.file) {
+        window.open(activeLesson.file, "_blank");
+      }
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById("sidebar");
+      sb.style.display = (sb.style.display === "none") ? "flex" : "none";
+    }
+
+    // Initialize Hub
+    window.addEventListener("DOMContentLoaded", () => {
+      buildSidebar();
+      loadLesson(LESSONS_REGISTRY[0].items[0]);
+    });
+  </script>
+</body>
+
+</html>

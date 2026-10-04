@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mental Math Studio (All 4 Operations) - የአእምሮ ሂሳብ ልምምድ</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for Web Audio Synthesis -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <!-- Canvas Confetti for celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  
+  <!-- Google Fonts: Handwritten math + Ethiopic typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Kalam:wght@700&family=Noto+Sans+Ethiopic:wght@400;600;700;800;900&family=Patrick+Hand&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Noto Sans Ethiopic', 'Nunito', sans-serif;
+      transition: background-color 0.3s ease;
+    }
+    .math-hand {
+      font-family: 'Patrick Hand', 'Caveat', 'Kalam', 'Noto Sans Ethiopic', cursive;
+    }
+    .font-num {
+      font-family: 'Fredoka', 'Noto Sans Ethiopic', sans-serif;
+    }
+
+    /* Notebook lined paper pattern with vertical red margin line */
+    .notebook-paper {
+      background-color: #fffdf8;
+      background-image: 
+        linear-gradient(90deg, transparent calc(50% - 1.5px), #f87171 50%, transparent calc(50% + 1.5px)),
+        linear-gradient(#cbd5e1 1.5px, transparent 1.5px);
+      background-size: 100% 100%, 100% 3.25rem;
+      background-position: 0 0, 0 1.25rem;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+    }
+
+    /* Spiral binding holes at the top */
+    .spiral-hole {
+      width: 14px;
+      height: 14px;
+      background-color: #1e293b;
+      border-radius: 50%;
+      box-shadow: inset 1px 2px 3px rgba(0, 0, 0, 0.7), 0 1px 1px rgba(255, 255, 255, 0.8);
+      position: relative;
+    }
+    .spiral-hole::after {
+      content: '';
+      position: absolute;
+      top: -9px;
+      left: 3px;
+      width: 8px;
+      height: 14px;
+      border: 2.5px solid #94a3b8;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+    }
+
+    /* Bubble Pop Animations */
+    @keyframes carryPop {
+      0% { transform: scale(0) translateY(14px); opacity: 0; }
+      70% { transform: scale(1.25) translateY(-4px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .bubble-enter {
+      animation: carryPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* SVG Linking Arc draw animation */
+    @keyframes drawArcLine {
+      from { stroke-dashoffset: 600; }
+      to { stroke-dashoffset: 0; }
+    }
+    .arc-animate {
+      stroke-dasharray: 600;
+      stroke-dashoffset: 0;
+      animation: drawArcLine 0.65s ease-out forwards;
+    }
+
+    /* Pulse animation for breaking numbers */
+    @keyframes splitPulse {
+      0% { transform: scale(0.85); opacity: 0; }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .split-animate {
+      animation: splitPulse 0.45s ease-out forwards;
+    }
+
+    .glow-digit {
+      filter: drop-shadow(0 0 10px currentColor);
+      transform: scale(1.12);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center select-none overflow-x-hidden p-2 sm:p-5">
+
+  <!-- Operation Selector Navigation -->
+  <nav class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl p-1.5 mb-3 shadow-xl flex items-center justify-between gap-1.5">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full">
+      <button id="opTabAdd" class="op-tab py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-emerald-600 text-white shadow-md shadow-emerald-900/30">
+        <span class="text-base sm:text-lg">➕</span>
+        <span class="tab-label">Addition / መደመር</span>
+      </button>
+      <button id="opTabSub" class="op-tab py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white">
+        <span class="text-base sm:text-lg">➖</span>
+        <span class="tab-label">Subtraction / መቀነስ</span>
+      </button>
+      <button id="opTabMul" class="op-tab py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white">
+        <span class="text-base sm:text-lg">✖️</span>
+        <span class="tab-label">Multiplication / ማባዛት</span>
+      </button>
+      <button id="opTabDiv" class="op-tab py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white">
+        <span class="text-base sm:text-lg">➗</span>
+        <span class="tab-label">Division / ማካፈል</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Top Controls & Toolbar -->
+  <header class="w-full max-w-4xl bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 p-3 sm:p-4 mb-3 shadow-xl flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center space-x-3">
+      <div id="appIconBox" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 via-amber-500 to-blue-500 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-emerald-500/20">
+        📐
+      </div>
+      <div>
+        <h1 id="appTitle" class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+          Mental Math Studio
+          <span id="notebookTag" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            Notebook Strategy
+          </span>
+        </h1>
+        <p id="appSubtitle" class="text-xs text-slate-400">
+          Clean Equation $\rightarrow$ Decomposition $\rightarrow$ Distributive Arcs
+        </p>
+      </div>
+    </div>
+
+    <!-- Action Toolbar Buttons -->
+    <div class="flex items-center flex-wrap gap-2">
+      <!-- Bilingual Language Toggle -->
+      <button id="langToggleBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md transition active:scale-95">
+        <span>🌐</span>
+        <span id="langBtnText">አማርኛ (Amharic)</span>
+      </button>
+
+      <!-- Practice Mode Selector: Guided vs Quiz -->
+      <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex text-xs font-bold">
+        <button id="modeGuidedBtn" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-600 text-white transition shadow">
+          <span id="modeGuidedText">Guided Steps</span>
+        </button>
+        <button id="modeQuizBtn" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">
+          <span id="modeQuizText">Quiz Mode</span>
+        </button>
+      </div>
+
+      <!-- Full Screen Toggle -->
+      <button id="fsBtn" class="flex items-center gap-1 p-2 sm:px-3 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs sm:text-sm font-semibold border border-slate-700 transition active:scale-95" title="Full Screen / ሙሉ ማያ (F)">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+        </svg>
+        <span id="fsText" class="hidden sm:inline">Full Screen</span>
+      </button>
+
+      <!-- Audio Mute Button -->
+      <button id="audioBtn" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 text-xs sm:text-sm transition" title="Sound Mute/Unmute">
+        <span id="audioIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Presets and Custom Inputs Bar -->
+  <section class="w-full max-w-4xl bg-slate-900/80 rounded-2xl border border-slate-800 p-3 mb-3 flex flex-wrap items-center justify-between gap-2.5 text-xs sm:text-sm shadow-md">
+    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2" id="presetButtonsContainer">
+      <!-- Dynamic Presets injected by JS -->
+    </div>
+
+    <!-- Random & Custom Inputs Buttons -->
+    <div class="flex items-center gap-2">
+      <button id="customToggleBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 active:scale-95 transition">
+        <span id="customBtnText">Custom ⚙️</span>
+      </button>
+      <button id="randomBtn" class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1 shadow active:scale-95 transition">
+        <span>🎲</span>
+        <span id="randomBtnText">Random Problem</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Custom Number Inputs Drawer -->
+  <div id="customInputsBar" class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl p-3.5 mb-3 hidden flex-wrap items-center justify-center gap-3 text-xs sm:text-sm shadow-xl">
+    <div class="flex items-center gap-2">
+      <span id="customLabel1" class="text-slate-300 font-semibold">Number 1:</span>
+      <input type="number" id="customInput1" min="1" max="999" value="8" class="w-20 px-2 py-1 bg-slate-950 border border-slate-700 rounded-lg text-white font-num font-bold text-center">
+    </div>
+    <span id="customOpSymbol" class="text-xl font-bold text-slate-500">+</span>
+    <div class="flex items-center gap-2">
+      <span id="customLabel2" class="text-slate-300 font-semibold">Number 2:</span>
+      <input type="number" id="customInput2" min="1" max="999" value="7" class="w-20 px-2 py-1 bg-slate-950 border border-slate-700 rounded-lg text-white font-num font-bold text-center">
+    </div>
+    <button id="applyCustomBtn" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs active:scale-95 transition">
+      <span id="applyCustomText">Apply & Practice</span>
+    </button>
+  </div>
+
+  <!-- Strategy Legend -->
+  <div class="w-full max-w-4xl flex flex-wrap items-center justify-center gap-3 sm:gap-7 mb-3 text-xs sm:text-sm font-bold" id="strategyLegend">
+    <!-- Dynamic legend items injected by JS -->
+  </div>
+
+  <main class="w-full max-w-4xl relative">
+    <!-- Top Spiral Ring Holes -->
+    <div class="absolute -top-3 left-4 right-4 flex justify-between px-2 sm:px-6 z-20 pointer-events-none">
+      <div class="spiral-hole"></div><div class="spiral-hole"></div><div class="spiral-hole"></div><div class="spiral-hole"></div>
+      <div class="spiral-hole"></div><div class="spiral-hole"></div><div class="spiral-hole"></div><div class="spiral-hole"></div>
+      <div class="spiral-hole"></div><div class="spiral-hole"></div><div class="spiral-hole"></div><div class="spiral-hole"></div>
+    </div>
+
+    <!-- Notebook Paper Board -->
+    <div class="notebook-paper text-slate-800 rounded-3xl p-5 sm:p-9 pt-8 border-4 border-slate-700/30 min-h-[460px] flex flex-col justify-between relative overflow-hidden">
+      
+      <!-- Top Handwritten Result Display -->
+      <div class="w-full flex flex-col items-center justify-center pt-2">
+        <div id="sumHeaderLabel" class="text-[11px] sm:text-xs uppercase font-extrabold tracking-widest text-slate-500 font-sans">
+          Result / Answer Above
+        </div>
+        <div id="topResultContainer" class="math-hand text-5xl sm:text-6xl md:text-7xl font-black tracking-wider text-slate-900 h-16 sm:h-20 flex items-center justify-center transition-all">
+          <span class="text-slate-300">?</span>
+        </div>
+        <div class="w-32 sm:w-48 h-1 bg-slate-800/80 rounded-full mt-1"></div>
+      </div>
+
+      <!-- Central Mathematical Workspace with SVG Arcs and Equation -->
+      <div class="relative w-full py-10 sm:py-14 my-auto" id="mathWorkspace">
+        <!-- SVG Container for Colored Linking Arcs -->
+        <svg id="arcSvg" class="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible"></svg>
+
+        <!-- Equation Container -->
+        <div id="equationContainer" class="flex items-center justify-center gap-4 sm:gap-10 md:gap-14 math-hand text-5xl sm:text-6xl md:text-7xl font-bold select-none relative z-20">
+          <!-- Dynamically populated by JS according to current operation and step -->
+        </div>
+      </div>
+
+      <!-- Bottom Step Explanation & Guidance Box -->
+      <div id="instructionPanel" class="w-full bg-white/95 backdrop-blur-md rounded-2xl border border-slate-300/80 p-3.5 sm:p-4 shadow-sm z-20">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer Actions & Step Controls -->
+  <footer class="w-full max-w-4xl mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+    <div class="flex items-center gap-2">
+      <button id="stepResetBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700 active:scale-95 transition text-xs sm:text-sm">
+        <span id="resetBtnText">↺ Restart Problem</span>
+      </button>
+      <button id="readAloudBtn" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold border border-slate-700 text-xs sm:text-sm active:scale-95 transition flex items-center gap-1.5">
+        <span>🗣️</span>
+        <span id="readAloudText">Read Explanation</span>
+      </button>
+    </div>
+
+    <!-- Step Next Action Button -->
+    <button id="stepNextBtn" class="px-5 sm:px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold shadow-lg shadow-emerald-600/30 flex items-center gap-2 active:scale-95 transition text-xs sm:text-sm">
+      <span id="nextBtnText">Next Step →</span>
+    </button>
+  </footer>
+
+  <!-- Shortcut Hints -->
+  <div class="mt-3 text-center text-xs text-slate-400 font-medium">
+    <span id="shortcutHint">Keyboard shortcuts: [F] Fullscreen | [Space / Enter] Next Step | [R] Random Problem</span>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        appTitle: "Mental Math Studio",
+        notebookTag: "Notebook Strategy",
+        appSubtitle: "Clean Equation → Decomposition → Distributive Arcs",
+        langBtn: "አማርኛ (Amharic)",
+        modeGuided: "Guided Steps",
+        modeQuiz: "Quiz Mode",
+        fsText: "Full Screen",
+        fsExitText: "Exit Full Screen",
+        tabAdd: "Addition / መደመር",
+        tabSub: "Subtraction / መቀነስ",
+        tabMul: "Multiplication / ማባዛት",
+        tabDiv: "Division / ማካፈል",
+        customBtn: "Custom ⚙️",
+        randomBtn: "Random Problem",
+        applyCustom: "Apply & Practice",
+        sumHeader: "Result / Answer Above",
+        resetBtn: "↺ Restart Problem",
+        readAloud: "Read Explanation",
+        shortcutHint: "Keyboard shortcuts: [F] Fullscreen | [Space / Enter] Next Step | [R] Random",
+        checkBtn: "Check",
+        tryAgain: "Try again! Re-calculate carefully.",
+
+        // Addition Terms
+        addLegends: {
+          hundreds: "Hundreds (Green)",
+          tens: "Tens (Orange)",
+          ones: "Ones (Blue)",
+          carry: "Carry-Over (①)"
+        },
+        addStep0: "Initial Equation: Connect matching place values from right to left.",
+        addStep1Title: "Step 1: Ones Column (Blue Arc)",
+        addStep2Title: "Step 2: Tens Column (Orange Arc)",
+        addStep3Title: "Step 3: Hundreds Column (Green Arc)",
+        addComplete: (total) => `🎉 Great work! The total sum is ${total}.`,
+
+        // Subtraction Terms
+        subLegends: {
+          hundreds: "Hundreds (Green)",
+          tens: "Tens (Orange)",
+          ones: "Ones (Blue)",
+          borrow: "Borrow (⊝)"
+        },
+        subStep0: "Initial Equation: Subtract place-by-place from right to left, borrowing 10 from the neighbor when needed.",
+        subStep1Title: "Step 1: Subtract Ones Column",
+        subStep2Title: "Step 2: Subtract Tens Column",
+        subStep3Title: "Step 3: Subtract Hundreds Column",
+        subComplete: (diff) => `🎉 Perfect! The remaining difference is ${diff}.`,
+
+        // Multiplication Terms
+        mulLegends: {
+          factor1: "Base Factor",
+          unbroken: "Unbroken Multiplier",
+          anchor1: "Anchor 1 (5/10)",
+          anchor2: "Anchor 2 (Remainder)"
+        },
+        mulStep0: (n1, n2) => `Initial Equation: We start with pure <strong>${n1} × ${n2}</strong>. In the next step, we will break the multiplier into friendly anchor pieces!`,
+        mulStep1Title: "Step 1: Decompose Multiplier into Anchors",
+        mulStep1Desc: (n2, a1, a2) => `Split <strong>${n2}</strong> into friendly parts: <strong class="text-orange-600">${a1}</strong> + <strong class="text-purple-600">${a2}</strong>.`,
+        mulStep2Title: "Step 2: Distribute to First Anchor",
+        mulStep2Desc: (n1, a1, p1) => `Multiply: <strong>${n1} × ${a1} = ${p1}</strong>`,
+        mulStep3Title: "Step 3: Distribute to Second Anchor",
+        mulStep3Desc: (n1, a2, p2) => `Multiply: <strong>${n1} × ${a2} = ${p2}</strong>`,
+        mulStep4Title: "Step 4: Combine Partial Products",
+        mulComplete: (p1, p2, total) => `🎉 Final Step: Add the products <strong>${p1} + ${p2} = ${total}</strong>!`,
+
+        // Division Terms
+        divLegends: {
+          dividend: "Unbroken Dividend",
+          divisor: "Divisor",
+          chunk1: "Friendly Chunk 1",
+          chunk2: "Friendly Chunk 2"
+        },
+        divStep0: (n1, n2) => `Initial Equation: We start with pure <strong>${n1} ÷ ${n2}</strong>. In the next step, we chunk the dividend into known multiples of ${n2}!`,
+        divStep1Title: "Step 1: Chunk Dividend into Friendly Multiples",
+        divStep1Desc: (n1, c1, c2, n2) => `Decompose <strong>${n1}</strong> into <strong class="text-emerald-600">${c1}</strong> + <strong class="text-amber-600">${c2}</strong> (both multiples of ${n2}).`,
+        divStep2Title: "Step 2: Divide First Chunk",
+        divStep2Desc: (c1, n2, q1) => `Divide: <strong>${c1} ÷ ${n2} = ${q1}</strong>`,
+        divStep3Title: "Step 3: Divide Second Chunk",
+        divStep3Desc: (c2, n2, q2) => `Divide: <strong>${c2} ÷ ${n2} = ${q2}</strong>`,
+        divStep4Title: "Step 4: Add Partial Quotients",
+        divComplete: (q1, q2, total) => `🎉 Final Step: Combine the quotients <strong>${q1} + ${q2} = ${total}</strong>!`
+      },
+      am: {
+        appTitle: "የአእምሮ ሂሳብ ስቱዲዮ",
+        notebookTag: "የደብተር ስልት",
+        appSubtitle: "ቀጥተኛ ጥያቄ → ቁጥሮችን መበተን → ቅስትና ማባዛት",
+        langBtn: "English",
+        modeGuided: "የደረጃ በደረጃ ማብራሪያ",
+        modeQuiz: "የራስ ፈተና (ልምምድ)",
+        fsText: "ሙሉ ማያ",
+        fsExitText: "ማያውን ቀንስ",
+        tabAdd: "መደመር (Addition)",
+        tabSub: "መቀነስ (Subtraction)",
+        tabMul: "ማባዛት (Multiplication)",
+        tabDiv: "ማካፈል (Division)",
+        customBtn: "የራስህ ቁጥር ⚙️",
+        randomBtn: "በዘፈቀደ ቁጥር",
+        applyCustom: "አስላና ተለማመድ",
+        sumHeader: "ድምሩ/ውጤቱ ከላይ ይጻፋል",
+        resetBtn: "↺ እንደገና ጀምር",
+        readAloud: "ማብራሪያውን አድምጥ",
+        shortcutHint: "የቁልፍ ሰሌዳ አቋራጭ፡ [F] ሙሉ ማያ | [Space / Enter] ቀጣይ ደረጃ | [R] በዘፈቀደ",
+        checkBtn: "አረጋግጥ",
+        tryAgain: "እንደገና ሞክር! ቁጥሮቹን አስተውለህ አስላ።",
+
+        // Addition Terms
+        addLegends: {
+          hundreds: "መቶዎች (አረንጓዴ)",
+          tens: "አሥሮች (ብርቱካናማ)",
+          ones: "አንድነቶች (ሰማያዊ)",
+          carry: "ማስተላለፍ (①)"
+        },
+        addStep0: "መነሻ ጥያቄ፡ አግድም ለመደመር ተዛማጅ የቦታ ዋጋዎችን ከቀኝ ወደ ግራ በቅስት እናገናኛለን።",
+        addStep1Title: "ደረጃ 1፡ የአንድነቶች ቦታ (ሰማያዊ ቅስት)",
+        addStep2Title: "ደረጃ 2፡ የአሥሮች ቦታ (ብርቱካናማ ቅስት)",
+        addStep3Title: "ደረጃ 3፡ የመቶዎች ቦታ (አረንጓዴ ቅስት)",
+        addComplete: (total) => `🎉 ድንቅ ስራ! አጠቃላይ ድምሩ ${total} ነው።`,
+
+        // Subtraction Terms
+        subLegends: {
+          hundreds: "መቶዎች (አረንጓዴ)",
+          tens: "አሥሮች (ብርቱካናማ)",
+          ones: "አንድነቶች (ሰማያዊ)",
+          borrow: "ብድር / መበደር (⊝)"
+        },
+        subStep0: "መነሻ ጥያቄ፡ ከቀኝ ወደ ግራ እየቀነስን ሲያንስ ከአጎራባች 10 እንበደራለን።",
+        subStep1Title: "ደረጃ 1፡ የአንድነቶች ቦታ መቀነስ",
+        subStep2Title: "ደረጃ 2፡ የአሥሮች ቦታ መቀነስ",
+        subStep3Title: "ደረጃ 3፡ የመቶዎች ቦታ መቀነስ",
+        subComplete: (diff) => `🎉 በጣም ጎበዝ! የቀረው ልዩነት ${diff} ነው።`,
+
+        // Multiplication Terms
+        mulLegends: {
+          factor1: "ዋና ተባዢ",
+          unbroken: "ያልተበተነ ቁጥር",
+          anchor1: "መነሻ 1 (5/10)",
+          anchor2: "መነሻ 2 (ቀሪ)"
+        },
+        mulStep0: (n1, n2) => `መነሻ ጥያቄ፡ ያልተበተነውን ሙሉ ቁጥር <strong>${n1} × ${n2}</strong> እናያለን። በሚቀጥለው ደረጃ አባዢውን ቁጥር ወደ ቀላል መነሻዎች እንበትነዋለን!`,
+        mulStep1Title: "ደረጃ 1፡ ቁጥሩን መበተን (Decomposition)",
+        mulStep1Desc: (n2, a1, a2) => `<strong>${n2}</strong> ን ወደ ሁለት ቀላል መነሻዎች እንበትናለን፡ <strong class="text-orange-600">${a1}</strong> + <strong class="text-purple-600">${a2}</strong>።`,
+        mulStep2Title: "ደረጃ 2፡ ከመጀመሪያው መነሻ ጋር ማባዛት",
+        mulStep2Desc: (n1, a1, p1) => `ማባዛት፡ <strong>${n1} × ${a1} = ${p1}</strong>`,
+        mulStep3Title: "ደረጃ 3፡ ከሁለተኛው መነሻ ጋር ማባዛት",
+        mulStep3Desc: (n1, a2, p2) => `ማባዛት፡ <strong>${n1} × ${a2} = ${p2}</strong>`,
+        mulStep4Title: "ደረጃ 4፡ ሁለቱንም ብዜቶች መደመር",
+        mulComplete: (p1, p2, total) => `🎉 የመጨረሻ ደረጃ፡ <strong>${p1} + ${p2} = ${total}</strong> በማድረግ ብዜቱን አገኘን!`,
+
+        // Division Terms
+        divLegends: {
+          dividend: "ያልተከፈለ ተካፋይ",
+          divisor: "አካፋይ",
+          chunk1: "የሚታወቅ ክፍል 1",
+          chunk2: "የሚታወቅ ክፍል 2"
+        },
+        divStep0: (n1, n2) => `መነሻ ጥያቄ፡ ያልተከፈለውን ሙሉ ቁጥር <strong>${n1} ÷ ${n2}</strong> እናያለን። በሚቀጥለው ደረጃ ተካፋዩን ወደምናውቃቸው የአካፋዩ ብዜቶች እንከፍለዋለን!`,
+        divStep1Title: "ደረጃ 1፡ ተካፋዩን ወደ ምቹ ብዜቶች መክፈል",
+        divStep1Desc: (n1, c1, c2, n2) => `<strong>${n1}</strong> ን ወደ ሁለት የ ${n2} ብዜቶች እንከፍላለን፡ <strong class="text-emerald-600">${c1}</strong> + <strong class="text-amber-600">${c2}</strong>።`,
+        divStep2Title: "ደረጃ 2፡ የመጀመሪያውን ክፍል ማካፈል",
+        divStep2Desc: (c1, n2, q1) => `ማካፈል፡ <strong>${c1} ÷ ${n2} = ${q1}</strong>`,
+        divStep3Title: "ደረጃ 3፡ ሁለተኛውን ክፍል ማካፈል",
+        divStep3Desc: (c2, n2, q2) => `ማካፈል፡ <strong>${c2} ÷ ${n2} = ${q2}</strong>`,
+        divStep4Title: "ደረጃ 4፡ ሁለቱን ድርሻዎች መደመር",
+        divComplete: (q1, q2, total) => `🎉 የመጨረሻ ደረጃ፡ <strong>${q1} + ${q2} = ${total}</strong> በማድረግ ሙሉ ድርሻውን አገኘን!`
+      }
+    };
+
+    let currentOp = 'mul'; // Default to Multiplication to showcase initial unbroken form
+    let currentLang = 'en';
+    let currentMode = 'guided';
+    let currentStep = 0;
+    let soundEnabled = true;
+
+    const presets = {
+      add: [
+        { label: "280 + 240", n1: 280, n2: 240 },
+        { label: "462 + 357", n1: 462, n2: 357 },
+        { label: "568 + 366", n1: 568, n2: 366 },
+        { label: "548 + 366", n1: 548, n2: 366 }
+      ],
+      sub: [
+        { label: "520 − 240", n1: 520, n2: 240 },
+        { label: "819 − 357", n1: 819, n2: 357 },
+        { label: "934 − 568", n1: 934, n2: 568 },
+        { label: "914 − 548", n1: 914, n2: 548 },
+        { label: "15 − 7", n1: 15, n2: 7 }
+      ],
+      mul: [
+        { label: "8 × 7", n1: 8, n2: 7, split: [5, 2] },
+        { label: "7 × 9", n1: 7, n2: 9, split: [5, 4] },
+        { label: "6 × 8", n1: 6, n2: 8, split: [5, 3] },
+        { label: "6 × 12", n1: 6, n2: 12, split: [10, 2] },
+        { label: "14 × 5", n1: 14, n2: 5, split: [10, 4] }
+      ],
+      div: [
+        { label: "78 ÷ 6", n1: 78, n2: 6, split: [60, 18] },
+        { label: "96 ÷ 4", n1: 96, n2: 4, split: [80, 16] },
+        { label: "84 ÷ 6", n1: 84, n2: 6, split: [60, 24] },
+        { label: "114 ÷ 6", n1: 114, n2: 6, split: [60, 54] },
+        { label: "135 ÷ 5", n1: 135, n2: 5, split: [100, 35] }
+      ]
+    };
+
+    let state = {
+      add: { n1: 462, n2: 357 },
+      sub: { n1: 520, n2: 240 },
+      mul: { n1: 8, n2: 7, a1: 5, a2: 2 },
+      div: { n1: 78, n2: 6, c1: 60, c2: 18 }
+    };
+
+    let synth = null;
+    function playAudio(type = 'chime') {
+      if (!soundEnabled) return;
+      try {
+        if (!synth && window.Tone) {
+          synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          synth.volume.value = -10;
+        }
+        if (Tone.context.state !== 'running') Tone.start();
+        if (type === 'chime') synth.triggerAttackRelease(["E5", "G5"], "16n");
+        else if (type === 'carry') synth.triggerAttackRelease(["A5", "C6"], "16n");
+        else if (type === 'borrow') synth.triggerAttackRelease(["C5", "F5"], "16n");
+        else if (type === 'split') synth.triggerAttackRelease(["F5", "A5", "C6"], "16n");
+        else if (type === 'success') synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n");
+        else if (type === 'error') synth.triggerAttackRelease(["F4", "D4"], "16n");
+      } catch (err) {}
+    }
+
+    function speakText(text) {
+      if (!soundEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = currentLang === 'am' ? 'am-ET' : 'en-US';
+      utterance.rate = currentLang === 'am' ? 0.95 : 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  </script>
+
+  <script>
+    const opTabAdd = document.getElementById('opTabAdd');
+    const opTabSub = document.getElementById('opTabSub');
+    const opTabMul = document.getElementById('opTabMul');
+    const opTabDiv = document.getElementById('opTabDiv');
+    const appTitle = document.getElementById('appTitle');
+    const appSubtitle = document.getElementById('appSubtitle');
+    const notebookTag = document.getElementById('notebookTag');
+    const langToggleBtn = document.getElementById('langToggleBtn');
+    const langBtnText = document.getElementById('langBtnText');
+    const modeGuidedBtn = document.getElementById('modeGuidedBtn');
+    const modeQuizBtn = document.getElementById('modeQuizBtn');
+    const modeGuidedText = document.getElementById('modeGuidedText');
+    const modeQuizText = document.getElementById('modeQuizText');
+    const fsBtn = document.getElementById('fsBtn');
+    const fsText = document.getElementById('fsText');
+    const audioBtn = document.getElementById('audioBtn');
+    const audioIcon = document.getElementById('audioIcon');
+    const presetButtonsContainer = document.getElementById('presetButtonsContainer');
+    const randomBtn = document.getElementById('randomBtn');
+    const randomBtnText = document.getElementById('randomBtnText');
+    const customToggleBtn = document.getElementById('customToggleBtn');
+    const customBtnText = document.getElementById('customBtnText');
+    const customInputsBar = document.getElementById('customInputsBar');
+    const customInput1 = document.getElementById('customInput1');
+    const customInput2 = document.getElementById('customInput2');
+    const customOpSymbol = document.getElementById('customOpSymbol');
+    const applyCustomBtn = document.getElementById('applyCustomBtn');
+    const applyCustomText = document.getElementById('applyCustomText');
+    const strategyLegend = document.getElementById('strategyLegend');
+    const topResultContainer = document.getElementById('topResultContainer');
+    const sumHeaderLabel = document.getElementById('sumHeaderLabel');
+    const equationContainer = document.getElementById('equationContainer');
+    const arcSvg = document.getElementById('arcSvg');
+    const instructionPanel = document.getElementById('instructionPanel');
+    const stepResetBtn = document.getElementById('stepResetBtn');
+    const resetBtnText = document.getElementById('resetBtnText');
+    const readAloudBtn = document.getElementById('readAloudBtn');
+    const readAloudText = document.getElementById('readAloudText');
+    const stepNextBtn = document.getElementById('stepNextBtn');
+    const nextBtnText = document.getElementById('nextBtnText');
+    const shortcutHint = document.getElementById('shortcutHint');
+
+    function drawPlaceArc(elem1Id, elem2Id, colorHex, arcDepth = 55, reverse = false) {
+      const elem1 = document.getElementById(elem1Id);
+      const elem2 = document.getElementById(elem2Id);
+      const workspace = document.getElementById('mathWorkspace');
+      if (!elem1 || !elem2 || !workspace) return;
+
+      const rect1 = elem1.getBoundingClientRect();
+      const rect2 = elem2.getBoundingClientRect();
+      const parentRect = workspace.getBoundingClientRect();
+
+      const x1 = rect1.left + rect1.width / 2 - parentRect.left;
+      const y1 = reverse ? (rect1.top - parentRect.top + 6) : (rect1.bottom - parentRect.top - 6);
+      const x2 = rect2.left + rect2.width / 2 - parentRect.left;
+      const y2 = reverse ? (rect2.top - parentRect.top + 6) : (rect2.bottom - parentRect.top - 6);
+
+      const midX = (x1 + x2) / 2;
+      const controlY = reverse ? (Math.min(y1, y2) - arcDepth) : (Math.max(y1, y2) + arcDepth);
+
+      const pathData = `M ${x1},${y1} Q ${midX},${controlY} ${x2},${y2}`;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", pathData);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", colorHex);
+      path.setAttribute("stroke-width", "3.5");
+      path.setAttribute("stroke-linecap", "round");
+      path.classList.add("arc-animate");
+
+      const dot1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot1.setAttribute("cx", x1); dot1.setAttribute("cy", y1); dot1.setAttribute("r", "4"); dot1.setAttribute("fill", colorHex);
+      const dot2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot2.setAttribute("cx", x2); dot2.setAttribute("cy", y2); dot2.setAttribute("r", "4"); dot2.setAttribute("fill", colorHex);
+
+      arcSvg.appendChild(path);
+      arcSvg.appendChild(dot1);
+      arcSvg.appendChild(dot2);
+    }
+
+    function clearArcs() {
+      arcSvg.innerHTML = '';
+    }
+
+    function getAddDecomposition(n1, n2) {
+      const o1 = n1 % 10, t1 = Math.floor((n1 % 100) / 10), h1 = Math.floor(n1 / 100);
+      const o2 = n2 % 10, t2 = Math.floor((n2 % 100) / 10), h2 = Math.floor(n2 / 100);
+      const onesSumRaw = o1 + o2, carryToTens = onesSumRaw >= 10 ? 1 : 0, onesDigitFinal = onesSumRaw % 10;
+      const tensSumRaw = t1 + t2 + carryToTens, carryToHundreds = tensSumRaw >= 10 ? 1 : 0, tensDigitFinal = tensSumRaw % 10;
+      const hundredsSumRaw = h1 + h2 + carryToHundreds;
+      return { o1, t1, h1, o2, t2, h2, onesSumRaw, carryToTens, onesDigitFinal, tensSumRaw, carryToHundreds, tensDigitFinal, hundredsSumRaw, total: n1 + n2 };
+    }
+
+    function getSubDecomposition(n1, n2) {
+      const maxVal = Math.max(n1, n2);
+      const minVal = Math.min(n1, n2);
+      const o1 = maxVal % 10, t1 = Math.floor((maxVal % 100) / 10), h1 = Math.floor(maxVal / 100);
+      const o2 = minVal % 10, t2 = Math.floor((minVal % 100) / 10), h2 = Math.floor(minVal / 100);
+
+      const borrowFromTens = o1 < o2 ? 1 : 0;
+      const effectiveO1 = borrowFromTens ? o1 + 10 : o1;
+      const onesDiff = effectiveO1 - o2;
+
+      const adjustedT1 = t1 - borrowFromTens;
+      const borrowFromHundreds = adjustedT1 < t2 ? 1 : 0;
+      const effectiveT1 = borrowFromHundreds ? adjustedT1 + 10 : adjustedT1;
+      const tensDiff = effectiveT1 - t2;
+
+      const adjustedH1 = h1 - borrowFromHundreds;
+      const hundredsDiff = adjustedH1 - h2;
+
+      return {
+        maxVal, minVal, o1, t1, h1, o2, t2, h2,
+        borrowFromTens, effectiveO1, onesDiff,
+        adjustedT1, borrowFromHundreds, effectiveT1, tensDiff,
+        adjustedH1, hundredsDiff,
+        total: maxVal - minVal
+      };
+    }
+
+    function getMulDecomposition(n1, n2, userA1, userA2) {
+      let a1 = userA1, a2 = userA2;
+      if (!a1 || !a2 || a1 + a2 !== n2) {
+        if (n2 >= 10) { a1 = 10; a2 = n2 - 10; }
+        else if (n2 >= 6) { a1 = 5; a2 = n2 - 5; }
+        else { a1 = Math.floor(n2 / 2); a2 = n2 - a1; }
+      }
+      return { n1, n2, a1, a2, p1: n1 * a1, p2: n1 * a2, total: n1 * n2 };
+    }
+
+    function getDivDecomposition(n1, n2, userC1, userC2) {
+      let c1 = userC1, c2 = userC2;
+      if (!c1 || !c2 || c1 + c2 !== n1 || c1 % n2 !== 0 || c2 % n2 !== 0) {
+        const roundTenMultiple = n2 * 10;
+        if (n1 >= roundTenMultiple && (n1 - roundTenMultiple) % n2 === 0) {
+          c1 = roundTenMultiple;
+          c2 = n1 - roundTenMultiple;
+        } else {
+          const half = Math.floor(n1 / (2 * n2)) * n2;
+          c1 = half > 0 ? half : n2;
+          c2 = n1 - c1;
+        }
+      }
+      return { n1, n2, c1, c2, q1: Math.floor(c1 / n2), q2: Math.floor(c2 / n2), total: Math.floor(n1 / n2) };
+    }
+  </script>
+
+  <script>
+    function renderMultiplicationWorkspace() {
+      const d = getMulDecomposition(state.mul.n1, state.mul.n2, state.mul.a1, state.mul.a2);
+      
+      // Check Step 0: Clean UNBROKEN Equation Display
+      if (currentStep === 0) {
+        equationContainer.innerHTML = `
+          <div class="flex items-center" id="mulFactor1Box">
+            <span id="mul-f1" class="text-blue-700 px-4 py-1.5 bg-white/90 rounded-2xl border border-blue-300 shadow-sm">${d.n1}</span>
+          </div>
+          <span class="text-slate-800 text-4xl sm:text-5xl font-black px-2">×</span>
+          <!-- Completely unbroken clean multiplier -->
+          <div class="flex items-center" id="mulFactor2Box">
+            <span id="mul-unbroken" class="text-orange-600 px-4 py-1.5 bg-white/90 rounded-2xl border-2 border-orange-400 shadow-sm transition-all duration-300 font-black">${d.n2}</span>
+          </div>
+        `;
+      } else {
+        // Step 1 and above: Factor 2 breaks down into (a1 + a2) with orange circle
+        equationContainer.innerHTML = `
+          <div class="flex items-center" id="mulFactor1Box">
+            <span id="mul-f1" class="text-blue-700 px-3 py-1 bg-white/90 rounded-2xl border border-blue-200 shadow-sm">${d.n1}</span>
+          </div>
+
+          <span class="text-slate-800 text-4xl sm:text-5xl font-black px-1 sm:px-2">×</span>
+
+          <!-- Decomposed multiplier in circled bubble -->
+          <div class="relative flex items-center split-animate" id="mulFactor2Box">
+            <div class="border-2 border-orange-500 bg-orange-50/95 px-3.5 py-1 rounded-3xl flex items-center gap-2 shadow-md">
+              <span id="mul-a1" class="text-orange-600 font-black">${d.a1}</span>
+              <span class="text-slate-500 text-3xl font-light">+</span>
+              <span id="mul-a2" class="text-purple-600 font-black">${d.a2}</span>
+            </div>
+            <span class="absolute -top-3.5 -right-2 text-[10px] font-sans font-bold bg-orange-500 text-white px-2 py-0.2 rounded-full shadow">
+              Split!
+            </span>
+          </div>
+        `;
+      }
+
+      if (currentMode === 'guided') renderMultiplicationGuidedStep(currentStep);
+      else renderMultiplicationQuizStep(currentStep);
+    }
+
+    function renderMultiplicationGuidedStep(step) {
+      const d = getMulDecomposition(state.mul.n1, state.mul.n2, state.mul.a1, state.mul.a2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      if (step === 0) {
+        topResultContainer.innerHTML = `<span class="text-slate-300">?</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Clean Problem Statement</span>
+              <p class="text-sm sm:text-base font-semibold text-slate-800 mt-1">${t.mulStep0(d.n1, d.n2)}</p>
+            </div>
+            <span class="text-2xl">✨</span>
+          </div>
+        `;
+        nextBtnText.textContent = `${t.mulStep1Title} →`;
+      } else if (step === 1) {
+        playAudio('split');
+        topResultContainer.innerHTML = `<span class="text-slate-300">(${d.n1} × ${d.a1}) + (${d.n1} × ${d.a2})</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-orange-600 uppercase tracking-wider">${t.mulStep1Title}</span>
+            <span class="text-xs font-mono font-bold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">${d.n2} = ${d.a1} + ${d.a2}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1 font-medium">${t.mulStep1Desc(d.n2, d.a1, d.a2)}</p>
+        `;
+        nextBtnText.textContent = `${t.mulStep2Title} →`;
+      } else if (step === 2) {
+        drawPlaceArc('mul-f1', 'mul-a1', '#ea580c', 60);
+        playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-orange-600 font-bold">${d.p1}</span> + <span class="text-slate-300">?</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-orange-600 uppercase tracking-wider">${t.mulStep2Title}</span>
+            <span class="text-xs font-mono font-bold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">${d.n1} × ${d.a1} = ${d.p1}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1 font-medium">${t.mulStep2Desc(d.n1, d.a1, d.p1)}</p>
+        `;
+        nextBtnText.textContent = `${t.mulStep3Title} →`;
+      } else if (step === 3) {
+        drawPlaceArc('mul-f1', 'mul-a1', '#ea580c', 60);
+        drawPlaceArc('mul-f1', 'mul-a2', '#9333ea', 95);
+        playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-orange-600 font-bold">${d.p1}</span> + <span class="text-purple-600 font-bold">${d.p2}</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-purple-600 uppercase tracking-wider">${t.mulStep3Title}</span>
+            <span class="text-xs font-mono font-bold bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full">${d.n1} × ${d.a2} = ${d.p2}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1 font-medium">${t.mulStep3Desc(d.n1, d.a2, d.p2)}</p>
+        `;
+        nextBtnText.textContent = `${t.mulStep4Title} →`;
+      } else if (step === 4) {
+        drawPlaceArc('mul-f1', 'mul-a1', '#ea580c', 60);
+        drawPlaceArc('mul-f1', 'mul-a2', '#9333ea', 95);
+        playAudio('success');
+        confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } });
+        topResultContainer.innerHTML = `<span class="text-emerald-700 font-black">${d.total}</span>`;
+        instructionPanel.innerHTML = `
+          <p class="text-base font-bold text-emerald-700">${t.mulComplete(d.p1, d.p2, d.total)}</p>
+        `;
+        nextBtnText.textContent = "↺ Finish / እንደገና ጀምር";
+      }
+    }
+
+    function renderMultiplicationQuizStep(step) {
+      const d = getMulDecomposition(state.mul.n1, state.mul.n2, state.mul.a1, state.mul.a2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      if (step === 0) {
+        instructionPanel.innerHTML = `
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-slate-700">${t.mulStep0(d.n1, d.n2)}</span>
+            <button onclick="startMulQuizDecompose()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow transition active:scale-95">
+              ${currentLang === 'am' ? 'ቁጥሩን በትነው ➔' : 'Decompose Multiplier ➔'}
+            </button>
+          </div>
+        `;
+      } else if (step === 1) {
+        drawPlaceArc('mul-f1', 'mul-a1', '#ea580c', 60);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-orange-600">${d.n1} × ${d.a1} = ?</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizMulInput" class="w-20 px-2 py-1 border-2 border-orange-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkMulQuiz(1)" class="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 2) {
+        drawPlaceArc('mul-f1', 'mul-a1', '#ea580c', 60);
+        drawPlaceArc('mul-f1', 'mul-a2', '#9333ea', 95);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-purple-600">${d.n1} × ${d.a2} = ?</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizMulInput" class="w-20 px-2 py-1 border-2 border-purple-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkMulQuiz(2)" class="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 3) {
+        drawPlaceArc('mul-f1', 'mul-a1', '#ea580c', 60);
+        drawPlaceArc('mul-f1', 'mul-a2', '#9333ea', 95);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-emerald-700">${currentLang === 'am' ? 'አጠቃላይ ድምሩን ደምር' : 'Add partial products'} (${d.p1} + ${d.p2}):</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizMulInput" class="w-20 px-2 py-1 border-2 border-emerald-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkMulQuiz(3)" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 4) {
+        topResultContainer.innerHTML = `<span class="text-emerald-700 font-black">${d.total}</span>`;
+        instructionPanel.innerHTML = `<p class="text-base font-bold text-emerald-700">${t.mulComplete(d.p1, d.p2, d.total)}</p>`;
+        playAudio('success');
+        confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } });
+      }
+    }
+
+    window.startMulQuizDecompose = function() {
+      currentStep = 1;
+      playAudio('split');
+      renderMultiplicationWorkspace();
+    };
+
+    window.checkMulQuiz = function(stepIdx) {
+      const d = getMulDecomposition(state.mul.n1, state.mul.n2, state.mul.a1, state.mul.a2);
+      const val = parseInt(document.getElementById('quizMulInput').value);
+      const feedback = document.getElementById('quizFeedback');
+      const t = translations[currentLang];
+
+      if (stepIdx === 1 && val === d.p1) {
+        playAudio('chime'); currentStep = 2; renderMultiplicationQuizStep(2);
+      } else if (stepIdx === 2 && val === d.p2) {
+        playAudio('chime'); currentStep = 3; renderMultiplicationQuizStep(3);
+      } else if (stepIdx === 3 && val === d.total) {
+        playAudio('chime'); currentStep = 4; renderMultiplicationQuizStep(4);
+      } else {
+        playAudio('error');
+        feedback.innerHTML = `<span class="text-rose-600 font-bold">${t.tryAgain}</span>`;
+      }
+    };
+  </script>
+
+  <script>
+    function renderDivisionWorkspace() {
+      const d = getDivDecomposition(state.div.n1, state.div.n2, state.div.c1, state.div.c2);
+
+      // Check Step 0: Clean UNBROKEN Equation Display
+      if (currentStep === 0) {
+        equationContainer.innerHTML = `
+          <!-- Unbroken clean dividend -->
+          <div class="flex items-center" id="divDividendBox">
+            <span id="div-unbroken" class="text-rose-600 px-4 py-1.5 bg-white/90 rounded-2xl border-2 border-rose-400 shadow-sm transition-all duration-300 font-black">${d.n1}</span>
+          </div>
+
+          <span class="text-slate-800 text-4xl sm:text-5xl font-black px-2">÷</span>
+
+          <div class="flex items-center" id="divDivisorBox">
+            <span id="div-d" class="text-blue-700 px-4 py-1.5 bg-white/90 rounded-2xl border border-blue-300 shadow-sm">${d.n2}</span>
+          </div>
+        `;
+      } else {
+        // Step 1 and above: Dividend breaks into friendly chunks (c1 + c2)
+        equationContainer.innerHTML = `
+          <div class="relative flex items-center split-animate" id="divDividendBox">
+            <div class="border-2 border-rose-500 bg-rose-50/95 px-3.5 py-1 rounded-3xl flex items-center gap-2 shadow-md">
+              <span id="div-c1" class="text-emerald-600 font-black">${d.c1}</span>
+              <span class="text-slate-500 text-3xl font-light">+</span>
+              <span id="div-c2" class="text-amber-600 font-black">${d.c2}</span>
+            </div>
+            <span class="absolute -top-3.5 -right-2 text-[10px] font-sans font-bold bg-rose-500 text-white px-2 py-0.2 rounded-full shadow">
+              Chunked!
+            </span>
+          </div>
+
+          <span class="text-slate-800 text-4xl sm:text-5xl font-black px-1 sm:px-2">÷</span>
+
+          <div class="flex items-center relative" id="divDivisorBox">
+            <span id="div-d" class="text-blue-700 px-3 py-1 bg-white/90 rounded-2xl border border-blue-200 shadow-sm">${d.n2}</span>
+          </div>
+        `;
+      }
+
+      if (currentMode === 'guided') renderDivisionGuidedStep(currentStep);
+      else renderDivisionQuizStep(currentStep);
+    }
+
+    function renderDivisionGuidedStep(step) {
+      const d = getDivDecomposition(state.div.n1, state.div.n2, state.div.c1, state.div.c2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      if (step === 0) {
+        topResultContainer.innerHTML = `<span class="text-slate-300">?</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Clean Problem Statement</span>
+              <p class="text-sm sm:text-base font-semibold text-slate-800 mt-1">${t.divStep0(d.n1, d.n2)}</p>
+            </div>
+            <span class="text-2xl">✨</span>
+          </div>
+        `;
+        nextBtnText.textContent = `${t.divStep1Title} →`;
+      } else if (step === 1) {
+        playAudio('split');
+        topResultContainer.innerHTML = `<span class="text-slate-300">(${d.c1} ÷ ${d.n2}) + (${d.c2} ÷ ${d.n2})</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-rose-600 uppercase tracking-wider">${t.divStep1Title}</span>
+            <span class="text-xs font-mono font-bold bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full">${d.n1} = ${d.c1} + ${d.c2}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1 font-medium">${t.divStep1Desc(d.n1, d.c1, d.c2, d.n2)}</p>
+        `;
+        nextBtnText.textContent = `${t.divStep2Title} →`;
+      } else if (step === 2) {
+        drawPlaceArc('div-c1', 'div-d', '#059669', 60);
+        playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-emerald-600 font-bold">${d.q1}</span> + <span class="text-slate-300">?</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">${t.divStep2Title}</span>
+            <span class="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">${d.c1} ÷ ${d.n2} = ${d.q1}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1 font-medium">${t.divStep2Desc(d.c1, d.n2, d.q1)}</p>
+        `;
+        nextBtnText.textContent = `${t.divStep3Title} →`;
+      } else if (step === 3) {
+        drawPlaceArc('div-c1', 'div-d', '#059669', 60);
+        drawPlaceArc('div-c2', 'div-d', '#d97706', 95);
+        playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-emerald-600 font-bold">${d.q1}</span> + <span class="text-amber-600 font-bold">${d.q2}</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">${t.divStep3Title}</span>
+            <span class="text-xs font-mono font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">${d.c2} ÷ ${d.n2} = ${d.q2}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1 font-medium">${t.divStep3Desc(d.c2, d.n2, d.q2)}</p>
+        `;
+        nextBtnText.textContent = `${t.divStep4Title} →`;
+      } else if (step === 4) {
+        drawPlaceArc('div-c1', 'div-d', '#059669', 60);
+        drawPlaceArc('div-c2', 'div-d', '#d97706', 95);
+        playAudio('success');
+        confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } });
+        topResultContainer.innerHTML = `<span class="text-emerald-700 font-black">${d.total}</span>`;
+        instructionPanel.innerHTML = `
+          <p class="text-base font-bold text-emerald-700">${t.divComplete(d.q1, d.q2, d.total)}</p>
+        `;
+        nextBtnText.textContent = "↺ Finish / እንደገና ጀምር";
+      }
+    }
+
+    function renderDivisionQuizStep(step) {
+      const d = getDivDecomposition(state.div.n1, state.div.n2, state.div.c1, state.div.c2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      if (step === 0) {
+        instructionPanel.innerHTML = `
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-slate-700">${t.divStep0(d.n1, d.n2)}</span>
+            <button onclick="startDivQuizChunk()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs shadow transition active:scale-95">
+              ${currentLang === 'am' ? 'ተካፋዩን ከፋፍለው ➔' : 'Chunk Dividend ➔'}
+            </button>
+          </div>
+        `;
+      } else if (step === 1) {
+        drawPlaceArc('div-c1', 'div-d', '#059669', 60);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-emerald-600">${d.c1} ÷ ${d.n2} = ?</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizDivInput" class="w-20 px-2 py-1 border-2 border-emerald-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkDivQuiz(1)" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 2) {
+        drawPlaceArc('div-c1', 'div-d', '#059669', 60);
+        drawPlaceArc('div-c2', 'div-d', '#d97706', 95);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-amber-600">${d.c2} ÷ ${d.n2} = ?</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizDivInput" class="w-20 px-2 py-1 border-2 border-amber-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkDivQuiz(2)" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 3) {
+        drawPlaceArc('div-c1', 'div-d', '#059669', 60);
+        drawPlaceArc('div-c2', 'div-d', '#d97706', 95);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-emerald-700">${currentLang === 'am' ? 'የሁለቱን ድርሻ ደምር' : 'Add partial quotients'} (${d.q1} + ${d.q2}):</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizDivInput" class="w-20 px-2 py-1 border-2 border-emerald-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkDivQuiz(3)" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 4) {
+        topResultContainer.innerHTML = `<span class="text-emerald-700 font-black">${d.total}</span>`;
+        instructionPanel.innerHTML = `<p class="text-base font-bold text-emerald-700">${t.divComplete(d.q1, d.q2, d.total)}</p>`;
+        playAudio('success');
+        confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } });
+      }
+    }
+
+    window.startDivQuizChunk = function() {
+      currentStep = 1;
+      playAudio('split');
+      renderDivisionWorkspace();
+    };
+
+    window.checkDivQuiz = function(stepIdx) {
+      const d = getDivDecomposition(state.div.n1, state.div.n2, state.div.c1, state.div.c2);
+      const val = parseInt(document.getElementById('quizDivInput').value);
+      const feedback = document.getElementById('quizFeedback');
+      const t = translations[currentLang];
+
+      if (stepIdx === 1 && val === d.q1) {
+        playAudio('chime'); currentStep = 2; renderDivisionQuizStep(2);
+      } else if (stepIdx === 2 && val === d.q2) {
+        playAudio('chime'); currentStep = 3; renderDivisionQuizStep(3);
+      } else if (stepIdx === 3 && val === d.total) {
+        playAudio('chime'); currentStep = 4; renderDivisionQuizStep(4);
+      } else {
+        playAudio('error');
+        feedback.innerHTML = `<span class="text-rose-600 font-bold">${t.tryAgain}</span>`;
+      }
+    };
+  </script>
+
+  <script>
+    function renderAdditionWorkspace() {
+      const d = getAddDecomposition(state.add.n1, state.add.n2);
+      equationContainer.innerHTML = `
+        <div class="flex items-center relative" id="num1Box">
+          <div class="relative flex flex-col items-center" id="box-h1">
+            <div id="carryH" class="absolute -top-12 sm:-top-14 w-8 sm:w-10 h-8 sm:h-10 rounded-full border-2 border-slate-900 text-slate-900 math-hand text-2xl sm:text-3xl font-black flex items-center justify-center opacity-0 transition-all bg-white/95 shadow-md">1</div>
+            <span id="digit-h1" class="text-emerald-700 transition-all duration-300 inline-block">${d.h1}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-t1">
+            <div id="carryT" class="absolute -top-12 sm:-top-14 w-8 sm:w-10 h-8 sm:h-10 rounded-full border-2 border-slate-900 text-slate-900 math-hand text-2xl sm:text-3xl font-black flex items-center justify-center opacity-0 transition-all bg-white/95 shadow-md">1</div>
+            <span id="digit-t1" class="text-amber-700 transition-all duration-300 inline-block">${d.t1}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-o1">
+            <span id="digit-o1" class="text-blue-700 transition-all duration-300 inline-block">${d.o1}</span>
+          </div>
+        </div>
+
+        <div class="text-slate-800 text-4xl sm:text-5xl font-black px-1 sm:px-4">+</div>
+
+        <div class="flex items-center relative" id="num2Box">
+          <div class="relative flex flex-col items-center" id="box-h2">
+            <span id="digit-h2" class="text-emerald-700 transition-all duration-300 inline-block">${d.h2}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-t2">
+            <span id="digit-t2" class="text-amber-700 transition-all duration-300 inline-block">${d.t2}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-o2">
+            <span id="digit-o2" class="text-blue-700 transition-all duration-300 inline-block">${d.o2}</span>
+          </div>
+        </div>
+      `;
+
+      if (currentMode === 'guided') renderAdditionGuidedStep(currentStep);
+      else renderAdditionQuizStep(currentStep);
+    }
+
+    function renderAdditionGuidedStep(step) {
+      const d = getAddDecomposition(state.add.n1, state.add.n2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      const dh1 = document.getElementById('digit-h1'), dt1 = document.getElementById('digit-t1'), do1 = document.getElementById('digit-o1');
+      const dh2 = document.getElementById('digit-h2'), dt2 = document.getElementById('digit-t2'), do2 = document.getElementById('digit-o2');
+      const ct = document.getElementById('carryT'), ch = document.getElementById('carryH');
+
+      [dh1, dt1, do1, dh2, dt2, do2].forEach(el => el && el.classList.remove('glow-digit', 'font-black'));
+
+      if (step === 0) {
+        topResultContainer.innerHTML = `<span class="text-slate-300">?</span>`;
+        instructionPanel.innerHTML = `<p class="text-sm sm:text-base font-medium text-slate-700">${t.addStep0}</p>`;
+        nextBtnText.textContent = `${t.addStep1Title} →`;
+      } else if (step === 1) {
+        drawPlaceArc('digit-o1', 'digit-o2', '#2563eb', 50);
+        do1.classList.add('glow-digit'); do2.classList.add('glow-digit');
+        if (d.carryToTens) {
+          ct.style.opacity = '1'; ct.classList.add('bubble-enter');
+          playAudio('carry');
+        } else playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-slate-300">_ _ </span><span class="text-blue-700">${d.onesDigitFinal}</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">${t.addStep1Title}</span>
+            <span class="text-xs font-mono font-bold bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">${d.o1} + ${d.o2} = ${d.onesSumRaw}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1">${d.o1} + ${d.o2} = ${d.onesSumRaw}. ${d.carryToTens ? (currentLang === 'am' ? '1 ን ወደ አሥሮች እናስተላልፋለን!' : 'Carry 1 to the tens column!') : ''}</p>
+        `;
+        nextBtnText.textContent = `${t.addStep2Title} →`;
+      } else if (step === 2) {
+        drawPlaceArc('digit-o1', 'digit-o2', '#2563eb', 50);
+        drawPlaceArc('digit-t1', 'digit-t2', '#d97706', 75);
+        dt1.classList.add('glow-digit'); dt2.classList.add('glow-digit');
+        if (d.carryToTens) ct.style.opacity = '1';
+        if (d.carryToHundreds) {
+          ch.style.opacity = '1'; ch.classList.add('bubble-enter');
+          playAudio('carry');
+        } else playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-slate-300">_ </span><span class="text-amber-700">${d.tensDigitFinal}</span><span class="text-blue-700">${d.onesDigitFinal}</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">${t.addStep2Title}</span>
+            <span class="text-xs font-mono font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">${d.carryToTens ? '1 + ' : ''}${d.t1} + ${d.t2} = ${d.tensSumRaw}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1">${d.carryToTens ? '1 + ' : ''}${d.t1} + ${d.t2} = ${d.tensSumRaw}. ${d.carryToHundreds ? (currentLang === 'am' ? '1 ን ወደ መቶዎች እናስተላልፋለን!' : 'Carry 1 to hundreds!') : ''}</p>
+        `;
+        nextBtnText.textContent = `${t.addStep3Title} →`;
+      } else if (step === 3) {
+        drawPlaceArc('digit-o1', 'digit-o2', '#2563eb', 50);
+        drawPlaceArc('digit-t1', 'digit-t2', '#d97706', 75);
+        drawPlaceArc('digit-h1', 'digit-h2', '#059669', 100);
+        dh1.classList.add('glow-digit'); dh2.classList.add('glow-digit');
+        if (d.carryToTens) ct.style.opacity = '1';
+        if (d.carryToHundreds) ch.style.opacity = '1';
+        topResultContainer.innerHTML = `<span class="text-emerald-700">${d.hundredsSumRaw}</span><span class="text-amber-700">${d.tensDigitFinal}</span><span class="text-blue-700">${d.onesDigitFinal}</span>`;
+        instructionPanel.innerHTML = `<p class="text-sm sm:text-base font-bold text-emerald-700">${t.addComplete(d.total)}</p>`;
+        playAudio('success');
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+        nextBtnText.textContent = "↺ Finish / እንደገና ጀምር";
+      }
+    }
+
+    function renderAdditionQuizStep(step) {
+      const d = getAddDecomposition(state.add.n1, state.add.n2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      if (step === 0) {
+        drawPlaceArc('digit-o1', 'digit-o2', '#2563eb', 50);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-blue-700">${currentLang === 'am' ? `የአንድነት ቁጥሮችን ደምር (${d.o1} + ${d.o2})` : `Add ones (${d.o1} + ${d.o2})`}:</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizAddInput" class="w-20 px-2 py-1 border-2 border-blue-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkAddQuiz(0)" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 1) {
+        drawPlaceArc('digit-o1', 'digit-o2', '#2563eb', 50);
+        drawPlaceArc('digit-t1', 'digit-t2', '#d97706', 75);
+        if (d.carryToTens) document.getElementById('carryT').style.opacity = '1';
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-amber-700">${currentLang === 'am' ? `የአሥሮችን ቦታ ደምር (${d.carryToTens ? 'ደማሪ 1 + ' : ''}${d.t1} + ${d.t2})` : `Add tens (${d.carryToTens ? '1 carry + ' : ''}${d.t1} + ${d.t2})`}:</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizAddInput" class="w-20 px-2 py-1 border-2 border-amber-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkAddQuiz(1)" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 2) {
+        drawPlaceArc('digit-o1', 'digit-o2', '#2563eb', 50);
+        drawPlaceArc('digit-t1', 'digit-t2', '#d97706', 75);
+        drawPlaceArc('digit-h1', 'digit-h2', '#059669', 100);
+        if (d.carryToTens) document.getElementById('carryT').style.opacity = '1';
+        if (d.carryToHundreds) document.getElementById('carryH').style.opacity = '1';
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-emerald-700">${currentLang === 'am' ? `የመቶዎችን ቦታ ደምር (${d.carryToHundreds ? 'ደማሪ 1 + ' : ''}${d.h1} + ${d.h2})` : `Add hundreds (${d.carryToHundreds ? '1 carry + ' : ''}${d.h1} + ${d.h2})`}:</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizAddInput" class="w-20 px-2 py-1 border-2 border-emerald-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkAddQuiz(2)" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 3) {
+        topResultContainer.innerHTML = `<span class="text-emerald-700">${d.hundredsSumRaw}</span><span class="text-amber-700">${d.tensDigitFinal}</span><span class="text-blue-700">${d.onesDigitFinal}</span>`;
+        instructionPanel.innerHTML = `<p class="text-base font-bold text-emerald-700">${t.addComplete(d.total)}</p>`;
+        playAudio('success');
+        confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } });
+      }
+    }
+
+    window.checkAddQuiz = function(stepIdx) {
+      const d = getAddDecomposition(state.add.n1, state.add.n2);
+      const val = parseInt(document.getElementById('quizAddInput').value);
+      const feedback = document.getElementById('quizFeedback');
+      const t = translations[currentLang];
+
+      if (stepIdx === 0 && (val === d.onesSumRaw || val === d.onesDigitFinal)) {
+        playAudio('chime'); currentStep = 1; renderAdditionQuizStep(1);
+      } else if (stepIdx === 1 && (val === d.tensSumRaw || val === d.tensDigitFinal)) {
+        playAudio('chime'); currentStep = 2; renderAdditionQuizStep(2);
+      } else if (stepIdx === 2 && val === d.hundredsSumRaw) {
+        playAudio('chime'); currentStep = 3; renderAdditionQuizStep(3);
+      } else {
+        playAudio('error');
+        feedback.innerHTML = `<span class="text-rose-600 font-bold">${t.tryAgain}</span>`;
+      }
+    };
+
+    function renderSubtractionWorkspace() {
+      const d = getSubDecomposition(state.sub.n1, state.sub.n2);
+      equationContainer.innerHTML = `
+        <div class="flex items-center relative" id="subNum1Box">
+          <div class="relative flex flex-col items-center" id="box-sub-h1">
+            <div id="borrowH" class="absolute -top-12 sm:-top-14 w-8 sm:w-10 h-8 sm:h-10 rounded-full border-2 border-rose-600 text-rose-700 math-hand text-xl sm:text-2xl font-black flex items-center justify-center opacity-0 transition-all bg-rose-50 shadow-md">−1</div>
+            <span id="digit-sub-h1" class="text-emerald-700 transition-all duration-300 inline-block">${d.h1}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-sub-t1">
+            <div id="borrowT" class="absolute -top-12 sm:-top-14 w-8 sm:w-10 h-8 sm:h-10 rounded-full border-2 border-rose-600 text-rose-700 math-hand text-xl sm:text-2xl font-black flex items-center justify-center opacity-0 transition-all bg-rose-50 shadow-md">−1</div>
+            <span id="digit-sub-t1" class="text-amber-700 transition-all duration-300 inline-block">${d.t1}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-sub-o1">
+            <span id="digit-sub-o1" class="text-blue-700 transition-all duration-300 inline-block">${d.o1}</span>
+          </div>
+        </div>
+
+        <div class="text-slate-800 text-4xl sm:text-5xl font-black px-1 sm:px-4">−</div>
+
+        <div class="flex items-center relative" id="subNum2Box">
+          <div class="relative flex flex-col items-center" id="box-sub-h2">
+            <span id="digit-sub-h2" class="text-emerald-700 transition-all duration-300 inline-block">${d.h2}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-sub-t2">
+            <span id="digit-sub-t2" class="text-amber-700 transition-all duration-300 inline-block">${d.t2}</span>
+          </div>
+          <div class="relative flex flex-col items-center ml-2 sm:ml-4" id="box-sub-o2">
+            <span id="digit-sub-o2" class="text-blue-700 transition-all duration-300 inline-block">${d.o2}</span>
+          </div>
+        </div>
+      `;
+
+      if (currentMode === 'guided') renderSubtractionGuidedStep(currentStep);
+      else renderSubtractionQuizStep(currentStep);
+    }
+
+    function renderSubtractionGuidedStep(step) {
+      const d = getSubDecomposition(state.sub.n1, state.sub.n2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      const dh1 = document.getElementById('digit-sub-h1');
+      const dt1 = document.getElementById('digit-sub-t1');
+      const do1 = document.getElementById('digit-sub-o1');
+      const dh2 = document.getElementById('digit-sub-h2');
+      const dt2 = document.getElementById('digit-sub-t2');
+      const do2 = document.getElementById('digit-sub-o2');
+      const bt = document.getElementById('borrowT');
+      const bh = document.getElementById('borrowH');
+
+      [dh1, dt1, do1, dh2, dt2, do2].forEach(el => el && el.classList.remove('glow-digit', 'font-black'));
+
+      if (step === 0) {
+        topResultContainer.innerHTML = `<span class="text-slate-300">?</span>`;
+        instructionPanel.innerHTML = `<p class="text-sm sm:text-base font-medium text-slate-700">${t.subStep0}</p>`;
+        nextBtnText.textContent = `${t.subStep1Title} →`;
+      } else if (step === 1) {
+        drawPlaceArc('digit-sub-o1', 'digit-sub-o2', '#2563eb', 50);
+        do1.classList.add('glow-digit'); do2.classList.add('glow-digit');
+        if (d.borrowFromTens) {
+          bt.style.opacity = '1'; bt.classList.add('bubble-enter');
+          playAudio('borrow');
+        } else playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-slate-300">_ _ </span><span class="text-blue-700">${d.onesDiff}</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">${t.subStep1Title}</span>
+            <span class="text-xs font-mono font-bold bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">${d.effectiveO1} − ${d.o2} = ${d.onesDiff}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1">${d.borrowFromTens ? (currentLang === 'am' ? `${d.o1} ከ ${d.o2} ስለሚያንስ ከአሥሮች 10 እንበደራለን (${d.effectiveO1} − ${d.o2} = ${d.onesDiff})!` : `Since ${d.o1} < ${d.o2}, borrow 10 from tens: ${d.effectiveO1} − ${d.o2} = ${d.onesDiff}!`) : `${d.o1} − ${d.o2} = ${d.onesDiff}`}</p>
+        `;
+        nextBtnText.textContent = `${t.subStep2Title} →`;
+      } else if (step === 2) {
+        drawPlaceArc('digit-sub-o1', 'digit-sub-o2', '#2563eb', 50);
+        drawPlaceArc('digit-sub-t1', 'digit-sub-t2', '#d97706', 75);
+        dt1.classList.add('glow-digit'); dt2.classList.add('glow-digit');
+        if (d.borrowFromTens) bt.style.opacity = '1';
+        if (d.borrowFromHundreds) {
+          bh.style.opacity = '1'; bh.classList.add('bubble-enter');
+          playAudio('borrow');
+        } else playAudio('chime');
+        topResultContainer.innerHTML = `<span class="text-slate-300">_ </span><span class="text-amber-700">${d.tensDiff}</span><span class="text-blue-700">${d.onesDiff}</span>`;
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">${t.subStep2Title}</span>
+            <span class="text-xs font-mono font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">${d.effectiveT1} − ${d.t2} = ${d.tensDiff}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-700 mt-1">${d.borrowFromTens ? (currentLang === 'am' ? `አሥሮች በብድር ቀንሶ ${d.adjustedT1} ሆኗል` : `Tens was reduced by borrowing to ${d.adjustedT1}`) : ''}. ${d.borrowFromHundreds ? (currentLang === 'am' ? `ከመቶዎች 10 ስንበደር ${d.effectiveT1} ይሆናል (${d.effectiveT1} − ${d.t2} = ${d.tensDiff})!` : `Borrow 10 from hundreds: ${d.effectiveT1} − ${d.t2} = ${d.tensDiff}!`) : `${d.adjustedT1} − ${d.t2} = ${d.tensDiff}`}</p>
+        `;
+        nextBtnText.textContent = `${t.subStep3Title} →`;
+      } else if (step === 3) {
+        drawPlaceArc('digit-sub-o1', 'digit-sub-o2', '#2563eb', 50);
+        drawPlaceArc('digit-sub-t1', 'digit-sub-t2', '#d97706', 75);
+        drawPlaceArc('digit-sub-h1', 'digit-sub-h2', '#059669', 100);
+        dh1.classList.add('glow-digit'); dh2.classList.add('glow-digit');
+        if (d.borrowFromTens) bt.style.opacity = '1';
+        if (d.borrowFromHundreds) bh.style.opacity = '1';
+        const displayH = d.hundredsDiff > 0 ? `<span class="text-emerald-700">${d.hundredsDiff}</span>` : '';
+        topResultContainer.innerHTML = `${displayH}<span class="text-amber-700">${d.tensDiff}</span><span class="text-blue-700">${d.onesDiff}</span>`;
+        instructionPanel.innerHTML = `<p class="text-sm sm:text-base font-bold text-emerald-700">${t.subComplete(d.total)}</p>`;
+        playAudio('success');
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+        nextBtnText.textContent = "↺ Finish / እንደገና ጀምር";
+      }
+    }
+
+    function renderSubtractionQuizStep(step) {
+      const d = getSubDecomposition(state.sub.n1, state.sub.n2);
+      const t = translations[currentLang];
+      clearArcs();
+
+      if (step === 0) {
+        drawPlaceArc('digit-sub-o1', 'digit-sub-o2', '#2563eb', 50);
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-blue-700">${currentLang === 'am' ? `የአንድነት ቁጥሮችን ቀንስ (${d.effectiveO1} − ${d.o2})` : `Subtract ones (${d.effectiveO1} − ${d.o2})`}:</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizSubInput" class="w-20 px-2 py-1 border-2 border-blue-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkSubQuiz(0)" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 1) {
+        drawPlaceArc('digit-sub-o1', 'digit-sub-o2', '#2563eb', 50);
+        drawPlaceArc('digit-sub-t1', 'digit-sub-t2', '#d97706', 75);
+        if (d.borrowFromTens) document.getElementById('borrowT').style.opacity = '1';
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-amber-700">${currentLang === 'am' ? `የአሥሮችን ቦታ ቀንስ (${d.effectiveT1} − ${d.t2})` : `Subtract tens (${d.effectiveT1} − ${d.t2})`}:</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizSubInput" class="w-20 px-2 py-1 border-2 border-amber-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkSubQuiz(1)" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 2) {
+        drawPlaceArc('digit-sub-o1', 'digit-sub-o2', '#2563eb', 50);
+        drawPlaceArc('digit-sub-t1', 'digit-sub-t2', '#d97706', 75);
+        drawPlaceArc('digit-sub-h1', 'digit-sub-h2', '#059669', 100);
+        if (d.borrowFromTens) document.getElementById('borrowT').style.opacity = '1';
+        if (d.borrowFromHundreds) document.getElementById('borrowH').style.opacity = '1';
+        instructionPanel.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs sm:text-sm font-bold text-emerald-700">${currentLang === 'am' ? `የመቶዎችን ቦታ ቀንስ (${d.adjustedH1} − ${d.h2})` : `Subtract hundreds (${d.adjustedH1} − ${d.h2})`}:</span>
+            <div class="flex items-center gap-2">
+              <input type="number" id="quizSubInput" class="w-20 px-2 py-1 border-2 border-emerald-400 rounded-lg text-center font-bold text-slate-900 bg-white" placeholder="?">
+              <button onclick="checkSubQuiz(2)" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs shadow">${t.checkBtn}</button>
+            </div>
+          </div>
+          <div id="quizFeedback" class="text-xs font-bold mt-1 text-slate-600"></div>
+        `;
+      } else if (step === 3) {
+        const displayH = d.hundredsDiff > 0 ? `<span class="text-emerald-700">${d.hundredsDiff}</span>` : '';
+        topResultContainer.innerHTML = `${displayH}<span class="text-amber-700">${d.tensDiff}</span><span class="text-blue-700">${d.onesDiff}</span>`;
+        instructionPanel.innerHTML = `<p class="text-base font-bold text-emerald-700">${t.subComplete(d.total)}</p>`;
+        playAudio('success');
+        confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } });
+      }
+    }
+
+    window.checkSubQuiz = function(stepIdx) {
+      const d = getSubDecomposition(state.sub.n1, state.sub.n2);
+      const val = parseInt(document.getElementById('quizSubInput').value);
+      const feedback = document.getElementById('quizFeedback');
+      const t = translations[currentLang];
+
+      if (stepIdx === 0 && val === d.onesDiff) {
+        playAudio('chime'); currentStep = 1; renderSubtractionQuizStep(1);
+      } else if (stepIdx === 1 && val === d.tensDiff) {
+        playAudio('chime'); currentStep = 2; renderSubtractionQuizStep(2);
+      } else if (stepIdx === 2 && val === d.hundredsDiff) {
+        playAudio('chime'); currentStep = 3; renderSubtractionQuizStep(3);
+      } else {
+        playAudio('error');
+        feedback.innerHTML = `<span class="text-rose-600 font-bold">${t.tryAgain}</span>`;
+      }
+    };
+  </script>
+
+  <script>
+    function renderPresetsAndLegend() {
+      const t = translations[currentLang];
+      presetButtonsContainer.innerHTML = '';
+
+      presets[currentOp].forEach((p, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `px-2.5 py-1 rounded-lg font-bold border transition text-xs active:scale-95 ${idx === 0 ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'}`;
+        btn.textContent = p.label;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#presetButtonsContainer button').forEach(b => {
+            b.className = 'px-2.5 py-1 rounded-lg font-bold border transition text-xs active:scale-95 bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700';
+          });
+          btn.className = 'px-2.5 py-1 rounded-lg font-bold border transition text-xs active:scale-95 bg-emerald-600 text-white border-emerald-500 shadow-sm';
+          
+          if (currentOp === 'add') {
+            state.add.n1 = p.n1; state.add.n2 = p.n2;
+          } else if (currentOp === 'sub') {
+            state.sub.n1 = p.n1; state.sub.n2 = p.n2;
+          } else if (currentOp === 'mul') {
+            state.mul.n1 = p.n1; state.mul.n2 = p.n2;
+            state.mul.a1 = p.split[0]; state.mul.a2 = p.split[1];
+          } else if (currentOp === 'div') {
+            state.div.n1 = p.n1; state.div.n2 = p.n2;
+            state.div.c1 = p.split[0]; state.div.c2 = p.split[1];
+          }
+          currentStep = 0;
+          initCurrentOperation();
+        });
+        presetButtonsContainer.appendChild(btn);
+      });
+
+      strategyLegend.innerHTML = '';
+      if (currentOp === 'add') {
+        strategyLegend.innerHTML = `
+          <div class="flex items-center gap-1.5 text-emerald-400"><span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span><span>${t.addLegends.hundreds}</span></div>
+          <div class="flex items-center gap-1.5 text-amber-400"><span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span><span>${t.addLegends.tens}</span></div>
+          <div class="flex items-center gap-1.5 text-blue-400"><span class="w-3.5 h-3.5 rounded-full bg-blue-500"></span><span>${t.addLegends.ones}</span></div>
+          <div class="flex items-center gap-1.5 text-rose-400"><span class="w-4 h-4 rounded-full border border-rose-400 bg-rose-500/20 flex items-center justify-center text-[10px] text-rose-300 font-black">①</span><span>${t.addLegends.carry}</span></div>
+        `;
+        customOpSymbol.textContent = '+';
+      } else if (currentOp === 'sub') {
+        strategyLegend.innerHTML = `
+          <div class="flex items-center gap-1.5 text-emerald-400"><span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span><span>${t.subLegends.hundreds}</span></div>
+          <div class="flex items-center gap-1.5 text-amber-400"><span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span><span>${t.subLegends.tens}</span></div>
+          <div class="flex items-center gap-1.5 text-blue-400"><span class="w-3.5 h-3.5 rounded-full bg-blue-500"></span><span>${t.subLegends.ones}</span></div>
+          <div class="flex items-center gap-1.5 text-rose-400"><span class="w-4 h-4 rounded-full border border-rose-400 bg-rose-500/20 flex items-center justify-center text-[10px] text-rose-300 font-black">⊝</span><span>${t.subLegends.borrow}</span></div>
+        `;
+        customOpSymbol.textContent = '−';
+      } else if (currentOp === 'mul') {
+        strategyLegend.innerHTML = `
+          <div class="flex items-center gap-1.5 text-blue-400"><span class="w-3.5 h-3.5 rounded-full bg-blue-500"></span><span>${t.mulLegends.factor1}</span></div>
+          <div class="flex items-center gap-1.5 text-orange-400"><span class="w-3.5 h-3.5 rounded-full bg-orange-500"></span><span>${t.mulLegends.anchor1}</span></div>
+          <div class="flex items-center gap-1.5 text-purple-400"><span class="w-3.5 h-3.5 rounded-full bg-purple-500"></span><span>${t.mulLegends.anchor2}</span></div>
+        `;
+        customOpSymbol.textContent = '×';
+      } else if (currentOp === 'div') {
+        strategyLegend.innerHTML = `
+          <div class="flex items-center gap-1.5 text-rose-400"><span class="w-3.5 h-3.5 rounded-full bg-rose-500"></span><span>${t.divLegends.dividend}</span></div>
+          <div class="flex items-center gap-1.5 text-blue-400"><span class="w-3.5 h-3.5 rounded-full bg-blue-500"></span><span>${t.divLegends.divisor}</span></div>
+          <div class="flex items-center gap-1.5 text-emerald-400"><span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span><span>${t.divLegends.chunk1}</span></div>
+          <div class="flex items-center gap-1.5 text-amber-400"><span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span><span>${t.divLegends.chunk2}</span></div>
+        `;
+        customOpSymbol.textContent = '÷';
+      }
+    }
+
+    function initCurrentOperation() {
+      renderPresetsAndLegend();
+      if (currentOp === 'add') renderAdditionWorkspace();
+      else if (currentOp === 'sub') renderSubtractionWorkspace();
+      else if (currentOp === 'mul') renderMultiplicationWorkspace();
+      else if (currentOp === 'div') renderDivisionWorkspace();
+    }
+
+    function applyLanguageStrings() {
+      const t = translations[currentLang];
+      appTitle.childNodes[0].nodeValue = t.appTitle + " ";
+      appSubtitle.textContent = t.appSubtitle;
+      notebookTag.textContent = t.notebookTag;
+      langBtnText.textContent = t.langBtn;
+      modeGuidedText.textContent = t.modeGuided;
+      modeQuizText.textContent = t.modeQuiz;
+      fsText.textContent = document.fullscreenElement ? t.fsExitText : t.fsText;
+      customBtnText.textContent = t.customBtn;
+      randomBtnText.textContent = t.randomBtn;
+      applyCustomText.textContent = t.applyCustom;
+      sumHeaderLabel.textContent = t.sumHeader;
+      resetBtnText.textContent = t.resetBtn;
+      readAloudText.textContent = t.readAloud;
+      shortcutHint.textContent = t.shortcutHint;
+
+      opTabAdd.querySelector('.tab-label').textContent = t.tabAdd;
+      opTabSub.querySelector('.tab-label').textContent = t.tabSub;
+      opTabMul.querySelector('.tab-label').textContent = t.tabMul;
+      opTabDiv.querySelector('.tab-label').textContent = t.tabDiv;
+
+      initCurrentOperation();
+    }
+
+    function setOperation(op) {
+      currentOp = op;
+      currentStep = 0;
+      playAudio('chime');
+
+      [opTabAdd, opTabSub, opTabMul, opTabDiv].forEach(tab => {
+        tab.className = "op-tab py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white";
+      });
+
+      if (op === 'add') opTabAdd.className = "op-tab py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-emerald-600 text-white shadow-md shadow-emerald-900/30";
+      else if (op === 'sub') opTabSub.className = "op-tab py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-rose-600 text-white shadow-md shadow-rose-900/30";
+      else if (op === 'mul') opTabMul.className = "op-tab py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-orange-600 text-white shadow-md shadow-orange-900/30";
+      else if (op === 'div') opTabDiv.className = "op-tab py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all bg-indigo-600 text-white shadow-md shadow-indigo-900/30";
+
+      initCurrentOperation();
+    }
+
+    opTabAdd.addEventListener('click', () => setOperation('add'));
+    opTabSub.addEventListener('click', () => setOperation('sub'));
+    opTabMul.addEventListener('click', () => setOperation('mul'));
+    opTabDiv.addEventListener('click', () => setOperation('div'));
+
+    langToggleBtn.addEventListener('click', () => {
+      currentLang = currentLang === 'en' ? 'am' : 'en';
+      playAudio('chime');
+      applyLanguageStrings();
+    });
+
+    modeGuidedBtn.addEventListener('click', () => {
+      currentMode = 'guided';
+      modeGuidedBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-600 text-white transition shadow";
+      modeQuizBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+      currentStep = 0;
+      initCurrentOperation();
+    });
+
+    modeQuizBtn.addEventListener('click', () => {
+      currentMode = 'quiz';
+      modeQuizBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-600 text-white transition shadow";
+      modeGuidedBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+      currentStep = 0;
+      initCurrentOperation();
+    });
+
+    stepNextBtn.addEventListener('click', () => {
+      if (currentMode === 'guided') {
+        const maxSteps = (currentOp === 'add' || currentOp === 'sub') ? 3 : 4;
+        currentStep = currentStep < maxSteps ? currentStep + 1 : 0;
+        initCurrentOperation();
+      } else {
+        generateRandomProblem();
+      }
+    });
+
+    stepResetBtn.addEventListener('click', () => {
+      currentStep = 0;
+      initCurrentOperation();
+    });
+
+    function generateRandomProblem() {
+      playAudio('chime');
+      currentStep = 0;
+      if (currentOp === 'add') {
+        state.add.n1 = Math.floor(Math.random() * 800) + 120;
+        state.add.n2 = Math.floor(Math.random() * 800) + 120;
+      } else if (currentOp === 'sub') {
+        const val1 = Math.floor(Math.random() * 800) + 120;
+        const val2 = Math.floor(Math.random() * 800) + 120;
+        state.sub.n1 = Math.max(val1, val2);
+        state.sub.n2 = Math.min(val1, val2);
+      } else if (currentOp === 'mul') {
+        const factors = [6, 7, 8, 9, 12, 14];
+        state.mul.n1 = factors[Math.floor(Math.random() * factors.length)];
+        state.mul.n2 = [6, 7, 8, 9, 12][Math.floor(Math.random() * 5)];
+        state.mul.a1 = null; state.mul.a2 = null;
+      } else if (currentOp === 'div') {
+        const divisors = [4, 5, 6, 7, 8];
+        const d = divisors[Math.floor(Math.random() * divisors.length)];
+        const mult = Math.floor(Math.random() * 18) + 11;
+        state.div.n2 = d;
+        state.div.n1 = d * mult;
+        state.div.c1 = null; state.div.c2 = null;
+      }
+      initCurrentOperation();
+    }
+    randomBtn.addEventListener('click', generateRandomProblem);
+
+    customToggleBtn.addEventListener('click', () => {
+      customInputsBar.classList.toggle('hidden');
+    });
+
+    applyCustomBtn.addEventListener('click', () => {
+      const v1 = parseInt(customInput1.value) || 8;
+      const v2 = parseInt(customInput2.value) || 7;
+      currentStep = 0;
+      if (currentOp === 'add') {
+        state.add.n1 = v1; state.add.n2 = v2;
+      } else if (currentOp === 'sub') {
+        state.sub.n1 = Math.max(v1, v2);
+        state.sub.n2 = Math.min(v1, v2);
+      } else if (currentOp === 'mul') {
+        state.mul.n1 = v1; state.mul.n2 = v2;
+        state.mul.a1 = null; state.mul.a2 = null;
+      } else if (currentOp === 'div') {
+        state.div.n1 = Math.max(v1, v2);
+        state.div.n2 = Math.min(v1, v2) || 1;
+        state.div.c1 = null; state.div.c2 = null;
+      }
+      customInputsBar.classList.add('hidden');
+      initCurrentOperation();
+    });
+
+    audioBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      audioIcon.textContent = soundEnabled ? '🔊' : '🔇';
+      audioBtn.classList.toggle('opacity-50', !soundEnabled);
+      if (!soundEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+    fsBtn.addEventListener('click', toggleFullScreen);
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFs = !!document.fullscreenElement;
+      const t = translations[currentLang];
+      fsText.textContent = isFs ? t.fsExitText : t.fsText;
+      setTimeout(initCurrentOperation, 150);
+    });
+
+    readAloudBtn.addEventListener('click', () => {
+      let text = '';
+      if (currentOp === 'add') {
+        const d = getAddDecomposition(state.add.n1, state.add.n2);
+        text = currentLang === 'am' 
+          ? `${state.add.n1} ሲደመር ${state.add.n2}። አንድነቶች ${d.onesSumRaw}፣ አሥሮች ${d.tensSumRaw}፣ መቶዎች ${d.hundredsSumRaw}። አጠቃላይ ድምሩ ${d.total} ነው።`
+          : `${state.add.n1} plus ${state.add.n2}. Ones sum is ${d.onesSumRaw}, tens sum is ${d.tensSumRaw}, hundreds sum is ${d.hundredsSumRaw}. Total answer is ${d.total}.`;
+      } else if (currentOp === 'sub') {
+        const d = getSubDecomposition(state.sub.n1, state.sub.n2);
+        text = currentLang === 'am'
+          ? `${state.sub.n1} ሲቀነስ ${state.sub.n2}። አንድነቶች ${d.onesDiff}፣ አሥሮች ${d.tensDiff}፣ መቶዎች ${d.hundredsDiff}። የቀረው ልዩነት ${d.total} ነው።`
+          : `${state.sub.n1} minus ${state.sub.n2}. Ones difference is ${d.onesDiff}, tens difference is ${d.tensDiff}, hundreds difference is ${d.hundredsDiff}. Remaining difference is ${d.total}.`;
+      } else if (currentOp === 'mul') {
+        const d = getMulDecomposition(state.mul.n1, state.mul.n2, state.mul.a1, state.mul.a2);
+        text = currentLang === 'am'
+          ? `${d.n1} ሲባዛ በ ${d.n2}። ${d.n2} ን ወደ ${d.a1} እና ${d.a2} እንበትናለን። ብዜቶች ${d.p1} እና ${d.p2}። አጠቃላይ ውጤት ${d.total} ነው።`
+          : `${d.n1} times ${d.n2}. Decompose ${d.n2} into ${d.a1} and ${d.a2}. Partial products are ${d.p1} and ${d.p2}. Total is ${d.total}.`;
+      } else if (currentOp === 'div') {
+        const d = getDivDecomposition(state.div.n1, state.div.n2, state.div.c1, state.div.c2);
+        text = currentLang === 'am'
+          ? `${d.n1} ሲካፈል ለ ${d.n2}። ${d.n1} ን ወደ ${d.c1} እና ${d.c2} እንከፍለዋለን። ድርሻዎች ${d.q1} እና ${d.q2} ሲሆኑ አጠቃላይ ድርሻ ${d.total} ነው።`
+          : `${d.n1} divided by ${d.n2}. Chunk ${d.n1} into ${d.c1} and ${d.c2}. Partial quotients are ${d.q1} and ${d.q2}. Final quotient is ${d.total}.`;
+      }
+      speakText(text);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') {
+        toggleFullScreen();
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        if (currentMode === 'guided') {
+          const maxSteps = (currentOp === 'add' || currentOp === 'sub') ? 3 : 4;
+          currentStep = currentStep < maxSteps ? currentStep + 1 : 0;
+          initCurrentOperation();
+        }
+      } else if (e.key === 'r' || e.key === 'R') {
+        generateRandomProblem();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      initCurrentOperation();
+    });
+
+    window.onload = function() {
+      applyLanguageStrings();
+    };
+  </script>
+</body>
+</html>

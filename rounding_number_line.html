@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movable Number Line Rounding Practice | 10, 100, 1000</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Patrick+Hand&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Fredoka', 'Noto Sans Ethiopic', sans-serif; background-color: #f8fafc; }
+    .handwriting { font-family: 'Patrick Hand', cursive; }
+    .number-line-track {
+      background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col items-center p-3 sm:p-6 select-none">
+
+  <!-- Header -->
+  <header class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center text-2xl shadow-md border-2 border-amber-500">
+        📏
+      </div>
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
+          <span>Number Line Rounding Studio</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-600 font-medium">
+          Drag the pin to see the distance to both benchmarks and understand "closeness"
+        </p>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex items-center gap-2">
+      <button onclick="toggleLang()" class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-xs sm:text-sm font-bold text-slate-700 transition">
+        🌐 <span id="langTxt">አማርኛ</span>
+      </button>
+      <button onclick="toggleFullScreen()" class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-xs sm:text-sm font-bold text-slate-700 transition">
+        ⛶ <span id="fsTxt">Full Screen</span>
+      </button>
+      <button onclick="toggleAudio()" class="p-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-slate-700 text-sm transition">
+        <span id="audioIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Rounding Place Selector Tabs -->
+  <div class="w-full max-w-4xl bg-white rounded-2xl p-2 shadow-sm border border-slate-200 mb-4 flex items-center justify-center gap-2 sm:gap-4">
+    <button onclick="setPlace(10)" id="btnPlace10" class="flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm transition text-slate-600 hover:bg-slate-100">
+      Nearest 10 (ወደ 10)
+    </button>
+    <button onclick="setPlace(100)" id="btnPlace100" class="flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm transition text-slate-600 hover:bg-slate-100">
+      Nearest 100 (ወደ 100)
+    </button>
+    <button onclick="setPlace(1000)" id="btnPlace1000" class="flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm transition bg-indigo-600 text-white shadow-md">
+      Nearest 1000 (ወደ 1,000)
+    </button>
+  </div>
+
+  <!-- Quick Presets from Quiz Sheet -->
+  <div class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-2 bg-slate-100 p-2.5 rounded-2xl mb-4 text-xs font-bold text-slate-600">
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <span class="text-slate-400 uppercase tracking-wider ml-1">Quiz Numbers:</span>
+      <button onclick="setVal(7642, 1000)" class="px-2.5 py-1 bg-white hover:bg-amber-50 hover:text-amber-700 rounded-lg border border-slate-200 shadow-sm transition">7,642 (Page 2)</button>
+      <button onclick="setVal(1922, 1000)" class="px-2.5 py-1 bg-white hover:bg-rose-50 hover:text-rose-700 rounded-lg border border-slate-200 shadow-sm transition">1,922 (Quiz Trap!)</button>
+      <button onclick="setVal(958, 1000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 rounded-lg border border-slate-200 shadow-sm transition">958</button>
+      <button onclick="setVal(4268, 1000)" class="px-2.5 py-1 bg-white hover:bg-indigo-50 hover:text-indigo-700 rounded-lg border border-slate-200 shadow-sm transition">4,268</button>
+      <button onclick="setVal(5177, 1000)" class="px-2.5 py-1 bg-white hover:bg-indigo-50 hover:text-indigo-700 rounded-lg border border-slate-200 shadow-sm transition">5,177</button>
+      <button onclick="randomize()" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg border border-amber-300 shadow-sm transition">🎲 Random</button>
+    </div>
+
+    <!-- Direct Custom Number Input -->
+    <div class="flex items-center gap-1.5">
+      <span class="text-slate-500">Custom:</span>
+      <input type="number" id="customInput" class="w-20 px-2 py-1 bg-white border border-slate-300 rounded-lg text-center font-bold text-slate-800" value="7642">
+      <button onclick="applyCustom()" class="px-2.5 py-1 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">Go</button>
+    </div>
+  </div>
+
+  <!-- Main Canvas Board -->
+  <main class="w-full max-w-4xl bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-slate-200 flex flex-col items-center relative overflow-hidden">
+    
+    <!-- Top Equation & Result Summary -->
+    <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-8 text-center sm:text-left">
+      <div>
+        <div class="text-xs uppercase font-extrabold text-slate-400 tracking-wider" id="lblTargetPlace">Rounding to the nearest 1,000</div>
+        <div class="text-4xl sm:text-5xl font-black text-slate-900 font-mono tracking-tight mt-1" id="dispTargetNum">7,642</div>
+      </div>
+
+      <!-- Result Card -->
+      <div class="flex items-center gap-3 bg-emerald-50 border-2 border-emerald-300 px-5 py-3 rounded-2xl shadow-sm">
+        <span class="text-3xl">🎯</span>
+        <div>
+          <div class="text-[11px] uppercase font-bold text-emerald-700" id="lblRoundsTo">Rounds to:</div>
+          <div class="text-3xl sm:text-4xl font-black text-emerald-800 font-mono" id="dispRoundedResult">8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic Closeness Distance Indicator Cards -->
+    <div class="w-full grid grid-cols-2 gap-4 mb-6 text-center">
+      <!-- Lower Distance -->
+      <div id="cardLower" class="p-3 sm:p-4 rounded-2xl border-2 transition-all">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500" id="lblLowerBound">Lower Benchmark</div>
+        <div class="text-2xl sm:text-3xl font-black font-mono my-1 text-slate-800" id="valLowerBound">7,000</div>
+        <div class="text-xs sm:text-sm font-semibold" id="distLowerTxt">Distance: <span class="font-bold text-base" id="distLowerVal">642</span> away</div>
+      </div>
+
+      <!-- Upper Distance -->
+      <div id="cardUpper" class="p-3 sm:p-4 rounded-2xl border-2 transition-all">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500" id="lblUpperBound">Upper Benchmark</div>
+        <div class="text-2xl sm:text-3xl font-black font-mono my-1 text-slate-800" id="valUpperBound">8,000</div>
+        <div class="text-xs sm:text-sm font-semibold" id="distUpperTxt">Distance: <span class="font-bold text-base" id="distUpperVal">358</span> away</div>
+      </div>
+    </div>
+
+    <!-- Interactive Movable Number Line Graphic -->
+    <div class="w-full relative py-12 px-6 sm:px-12 my-4">
+      
+      <!-- The Main Thick Track -->
+      <div class="w-full h-4 number-line-track rounded-full relative" id="trackLine">
+        <!-- Midpoint Tick & Label -->
+        <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none" style="left: 50%;">
+          <div class="w-1 h-8 bg-amber-500 rounded-full mb-1"></div>
+          <span class="text-xs font-extrabold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 mt-2 whitespace-nowrap" id="midpointLabel">
+            Midpoint: 7,500
+          </span>
+        </div>
+      </div>
+
+      <!-- Lower Benchmark Marker -->
+      <div class="absolute left-6 sm:left-12 top-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
+        <div class="w-1.5 h-10 bg-slate-700 rounded-full"></div>
+        <span class="text-sm sm:text-lg font-black font-mono text-slate-800 mt-2" id="tickLower">7,000</span>
+      </div>
+
+      <!-- Upper Benchmark Marker -->
+      <div class="absolute right-6 sm:right-12 top-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
+        <div class="w-1.5 h-10 bg-slate-700 rounded-full"></div>
+        <span class="text-sm sm:text-lg font-black font-mono text-slate-800 mt-2" id="tickUpper">8,000</span>
+      </div>
+
+      <!-- The Draggable Interactive Pin -->
+      <div id="dragPin" class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing z-20 flex flex-col items-center transition-all duration-75" style="left: 64.2%;">
+        <!-- Floating Number Bubble -->
+        <div class="px-3 py-1 bg-slate-900 text-white rounded-xl shadow-xl font-mono font-bold text-sm sm:text-base border-2 border-amber-400 mb-2 whitespace-nowrap" id="bubbleNum">
+          7,642
+        </div>
+        <!-- Pin Marker -->
+        <div class="w-7 h-7 bg-amber-400 rounded-full border-4 border-slate-900 shadow-lg flex items-center justify-center text-xs">
+          📍
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Range Scrub Slider -->
+    <div class="w-full max-w-xl flex flex-col items-center gap-1 mt-4">
+      <input type="range" id="scrubSlider" class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" min="7000" max="8000" value="7642">
+      <div class="w-full flex justify-between text-[11px] font-bold text-slate-400 px-1">
+        <span>← Drag Slider or Number Pin above</span>
+        <span>Continuous Scale →</span>
+      </div>
+    </div>
+
+    <!-- Closeness Reason Explanation Box -->
+    <div id="reasonBox" class="w-full mt-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-sm font-semibold flex items-center gap-3">
+      <span class="text-2xl">💡</span>
+      <p id="reasonText" class="leading-relaxed">
+        7,642 is closer to 8,000 (358 units away) than to 7,000 (642 units away). Because it passes the 7,500 midpoint, we round UP to 8,000.
+      </p>
+    </div>
+
+  </main>
+
+  <script>
+    let currentVal = 7642;
+    let place = 1000; // 10, 100, 1000
+    let lang = 'en';
+    let audioOn = true;
+    let synth = null;
+
+    const i18n = {
+      en: {
+        fs: "Full Screen", fsExit: "Exit Screen",
+        placeTitle: { 10: "Rounding to the nearest 10", 100: "Rounding to the nearest 100", 1000: "Rounding to the nearest 1,000" },
+        roundsTo: "Rounds to:",
+        lower: "Lower Benchmark", upper: "Upper Benchmark",
+        midpoint: "Midpoint",
+        distAway: "away",
+        reasonUp: (num, res, lower, diffUp, diffLow, mid) => `${num.toLocaleString()} is closer to ${res.toLocaleString()} (${diffUp.toLocaleString()} units away) than to ${lower.toLocaleString()} (${diffLow.toLocaleString()} units away). Because it is at or past the ${mid.toLocaleString()} midpoint, we round UP.`,
+        reasonDown: (num, res, upper, diffLow, diffUp, mid) => `${num.toLocaleString()} is closer to ${res.toLocaleString()} (${diffLow.toLocaleString()} units away) than to ${upper.toLocaleString()} (${diffUp.toLocaleString()} units away). Because it has not reached the ${mid.toLocaleString()} midpoint, we round DOWN.`
+      },
+      am: {
+        fs: "ሙሉ ማያ", fsExit: "ማያውን ቀንስ",
+        placeTitle: { 10: "ወደ ቅርብ 10 ማጠጋጋት", 100: "ወደ ቅርብ 100 ማጠጋጋት", 1000: "ወደ ቅርብ 1,000 ማጠጋጋት" },
+        roundsTo: "የተጠጋጋው ውጤት፡",
+        lower: "የታችኛው ወሰን", upper: "የላይኛው ወሰን",
+        midpoint: "እኩል መካከለኛ",
+        distAway: "ርቀት",
+        reasonUp: (num, res, lower, diffUp, diffLow, mid) => `${num.toLocaleString()} ወደ ${res.toLocaleString()} ይቀርባል (ርቀቱ ${diffUp.toLocaleString()} ብቻ ነው)፤ ከ ${lower.toLocaleString()} ግን ${diffLow.toLocaleString()} ይርቃል። ከመካከለኛው ${mid.toLocaleString()} በላይ ስለሆነ ወደ ላይ ይጠጋጋል።`,
+        reasonDown: (num, res, upper, diffLow, diffUp, mid) => `${num.toLocaleString()} ወደ ${res.toLocaleString()} ይቀርባል (ርቀቱ ${diffLow.toLocaleString()} ብቻ ነው)፤ ከ ${upper.toLocaleString()} ግን ${diffUp.toLocaleString()} ይርቃል። ከመካከለኛው ${mid.toLocaleString()} በታች ስለሆነ ወደ ታች ይጠጋጋል።`
+      }
+    };
+
+    function playTone(isUp) {
+      if (!audioOn) return;
+      try {
+        if (!synth) synth = new Tone.Synth().toDestination();
+        if (Tone.context.state !== 'running') Tone.start();
+        synth.triggerAttackRelease(isUp ? "G5" : "C5", "16n");
+      } catch (e) {}
+    }
+
+    function toggleAudio() {
+      audioOn = !audioOn;
+      document.getElementById('audioIcon').textContent = audioOn ? '🔊' : '🔇';
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else if (document.exitFullscreen) document.exitFullscreen();
+    }
+
+    function toggleLang() {
+      lang = lang === 'en' ? 'am' : 'en';
+      document.getElementById('langTxt').textContent = lang === 'en' ? 'አማርኛ' : 'English';
+      update();
+    }
+
+    function setPlace(newPlace) {
+      place = newPlace;
+      [10, 100, 1000].forEach(p => {
+        const btn = document.getElementById(`btnPlace${p}`);
+        btn.className = (p === place)
+          ? "flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm transition bg-indigo-600 text-white shadow-md"
+          : "flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm transition text-slate-600 hover:bg-slate-100";
+      });
+      update();
+    }
+
+    function setVal(v, p) {
+      currentVal = v;
+      if (p) setPlace(p);
+      else update();
+    }
+
+    function applyCustom() {
+      const v = parseInt(document.getElementById('customInput').value, 10);
+      if (!isNaN(v)) {
+        currentVal = Math.max(0, Math.min(99999, v));
+        update();
+      }
+    }
+
+    function randomize() {
+      currentVal = Math.floor(Math.random() * 8999) + 1000;
+      update();
+    }
+
+    // Calculation & View Updating
+    function update() {
+      const lower = Math.floor(currentVal / place) * place;
+      const upper = lower + place;
+      const mid = lower + (place / 2);
+      const diffLow = currentVal - lower;
+      const diffUp = upper - currentVal;
+      const roundsUp = currentVal >= mid;
+      const result = roundsUp ? upper : lower;
+
+      // Update Slider bounds
+      const slider = document.getElementById('scrubSlider');
+      slider.min = lower;
+      slider.max = upper;
+      slider.value = currentVal;
+
+      // Texts
+      document.getElementById('lblTargetPlace').textContent = i18n[lang].placeTitle[place];
+      document.getElementById('dispTargetNum').textContent = currentVal.toLocaleString();
+      document.getElementById('bubbleNum').textContent = currentVal.toLocaleString();
+      document.getElementById('dispRoundedResult').textContent = result.toLocaleString();
+      document.getElementById('lblRoundsTo').textContent = i18n[lang].roundsTo;
+
+      // Bounds
+      document.getElementById('valLowerBound').textContent = lower.toLocaleString();
+      document.getElementById('valUpperBound').textContent = upper.toLocaleString();
+      document.getElementById('tickLower').textContent = lower.toLocaleString();
+      document.getElementById('tickUpper').textContent = upper.toLocaleString();
+      document.getElementById('midpointLabel').textContent = `${i18n[lang].midpoint}: ${mid.toLocaleString()}`;
+
+      // Distances
+      document.getElementById('distLowerVal').textContent = diffLow.toLocaleString();
+      document.getElementById('distUpperVal').textContent = diffUp.toLocaleString();
+
+      // Highlight closer card
+      const cLow = document.getElementById('cardLower');
+      const cUp = document.getElementById('cardUpper');
+      if (roundsUp) {
+        cUp.className = "p-3 sm:p-4 rounded-2xl border-2 border-emerald-400 bg-emerald-50 text-emerald-950 shadow-md transition-all scale-[1.02]";
+        cLow.className = "p-3 sm:p-4 rounded-2xl border-2 border-slate-200 bg-slate-50 text-slate-600 transition-all opacity-75";
+      } else {
+        cLow.className = "p-3 sm:p-4 rounded-2xl border-2 border-emerald-400 bg-emerald-50 text-emerald-950 shadow-md transition-all scale-[1.02]";
+        cUp.className = "p-3 sm:p-4 rounded-2xl border-2 border-slate-200 bg-slate-50 text-slate-600 transition-all opacity-75";
+      }
+
+      // Percentage position between lower and upper
+      const pct = Math.max(0, Math.min(100, ((currentVal - lower) / place) * 100));
+      // Offset between margins: 3rem (48px) on both sides
+      const pin = document.getElementById('dragPin');
+      pin.style.left = `calc(3rem + ${pct * 0.01} * (100% - 6rem))`;
+
+      // Reason Box
+      const rBox = document.getElementById('reasonText');
+      if (roundsUp) {
+        rBox.textContent = i18n[lang].reasonUp(currentVal, result, lower, diffUp, diffLow, mid);
+      } else {
+        rBox.textContent = i18n[lang].reasonDown(currentVal, result, upper, diffLow, diffUp, mid);
+      }
+    }
+
+    // Slider listener
+    document.getElementById('scrubSlider').addEventListener('input', (e) => {
+      currentVal = parseInt(e.target.value, 10);
+      update();
+    });
+
+    // Dragging pin support
+    const track = document.getElementById('trackLine');
+    let isDragging = false;
+
+    function handleDrag(clientX) {
+      const rect = track.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+      const pct = x / rect.width;
+      const lower = Math.floor(currentVal / place) * place;
+      currentVal = Math.round(lower + pct * place);
+      update();
+    }
+
+    const pin = document.getElementById('dragPin');
+    pin.addEventListener('mousedown', () => isDragging = true);
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        playTone(currentVal >= Math.floor(currentVal / place) * place + place / 2);
+      }
+    });
+    window.addEventListener('mousemove', (e) => { if (isDragging) handleDrag(e.clientX); });
+
+    // Touch
+    pin.addEventListener('touchstart', () => isDragging = true);
+    window.addEventListener('touchend', () => isDragging = false);
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches.length > 0) handleDrag(e.touches[0].clientX);
+    });
+
+    // Keyboard shortcut F
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') toggleFullScreen();
+    });
+
+    // Init
+    update();
+  </script>
+</body>
+</html>

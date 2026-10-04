@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grade 4/5 Canada Social Studies Hub</title>
+  <style>
+    :root {
+      --primary: #c51d24;
+      --primary-dark: #961217;
+      --secondary: #1d70b8;
+      --bg: #f4f7f9;
+      --card-bg: #ffffff;
+      --text: #2d3748;
+      --accent: #ffcc00;
+      --success: #28a745;
+      --danger: #dc3545;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    header h1 { margin: 0; font-size: 2rem; }
+    header p { margin: 0.5rem 0 0; opacity: 0.9; }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      background: white;
+      padding: 10px;
+      border-bottom: 2px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      border: none;
+      background: transparent;
+      padding: 10px 18px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #4a5568;
+    }
+    .nav-btn.active, .nav-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    h2 { color: var(--primary-dark); margin-top: 0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; }
+
+    /* Interactive Grids & Flashcards */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .interactive-card {
+      background: #edf2f7;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .interactive-card:hover {
+      background: #e2e8f0;
+      border-color: var(--secondary);
+      transform: translateY(-2px);
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      background: #cbd5e1;
+      margin-top: 5px;
+    }
+
+    /* Compass UI */
+    .compass-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      background: #ebf8ff;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .compass-circle {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      border: 4px solid var(--secondary);
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    .compass-point { position: absolute; font-weight: bold; color: var(--primary); }
+    .point-n { top: 6px; }
+    .point-s { bottom: 6px; }
+    .point-w { left: 10px; }
+    .point-e { right: 10px; }
+
+    /* Density Simulator */
+    .density-sim {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+    .box-container {
+      text-align: center;
+      flex: 1;
+      min-width: 200px;
+    }
+    .box-visual {
+      width: 100%;
+      height: 150px;
+      border: 3px dashed #718096;
+      border-radius: 8px;
+      position: relative;
+      background: #fff;
+      overflow: hidden;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      background: var(--primary);
+      border-radius: 50%;
+      position: absolute;
+    }
+
+    /* Buttons & Controls */
+    .btn {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #15558d; }
+    .btn-submit { background: var(--success); }
+    .btn-submit:hover { background: #218838; }
+
+    /* Quiz Styles */
+    .quiz-q { margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 8px; }
+    .quiz-q p { font-weight: 600; margin: 0 0 10px; }
+    .quiz-opt {
+      display: block;
+      margin-bottom: 8px;
+      cursor: pointer;
+      padding: 8px 12px;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .quiz-opt:hover { background: #f1f5f9; }
+    .quiz-opt input { margin-right: 10px; }
+    .feedback { font-weight: bold; margin-top: 8px; display: none; }
+    .feedback.correct { color: var(--success); }
+    .feedback.incorrect { color: var(--danger); }
+
+    #quiz-results {
+      padding: 20px;
+      background: #e6fffa;
+      border: 2px solid #38b2ac;
+      border-radius: 8px;
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🇨🇦 Canada Social Studies Hub</h1>
+    <p>Grades 4 & 5: Regions, Capitals, Compass Directions & Population Density</p>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" onclick="showTab('study')">1. Practice & Explore</button>
+    <button class="nav-btn" onclick="showTab('interactive')">2. Live Tools</button>
+    <button class="nav-btn" onclick="showTab('quiz')">3. Test Knowledge</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: PRACTICE & STUDY -->
+    <div id="study" class="section active">
+      <div class="card">
+        <h2>🍁 10 Provinces & 3 Territories</h2>
+        <p>Click any card to reveal its <strong>Capital City</strong> and <strong>Postal Abbreviation</strong>.</p>
+        <div class="grid" id="prov-grid"></div>
+      </div>
+
+      <div class="card">
+        <h2>🧭 The 4 Cardinal Directions</h2>
+        <div class="compass-box">
+          <div class="compass-circle">
+            <span class="compass-point point-n">N</span>
+            <span class="compass-point point-e">E</span>
+            <span class="compass-point point-s">S</span>
+            <span class="compass-point point-w">W</span>
+            <span>Compass</span>
+          </div>
+          <div style="flex: 1; min-width: 250px;">
+            <p><strong>Mnemonic:</strong> <em>Never Eat Soggy Waffles</em> (North, East, South, West)</p>
+            <ul>
+              <li><strong>North:</strong> Canada borders the <strong>Arctic Ocean</strong>.</li>
+              <li><strong>South:</strong> Canada shares a border with the <strong>United States</strong>.</li>
+              <li><strong>East:</strong> Bordered by the <strong>Atlantic Ocean</strong>.</li>
+              <li><strong>West:</strong> Bordered by the <strong>Pacific Ocean</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: INTERACTIVE TOOLS -->
+    <div id="interactive" class="section">
+      <!-- Compass Travel Practice -->
+      <div class="card">
+        <h2>🧭 Which Direction Are You Travelling?</h2>
+        <p>Imagine you are starting in <strong>Ontario (ON)</strong>. Choose which direction you would drive/travel to reach other provinces!</p>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <label><strong>Destination:</strong></label>
+          <select id="travel-dest" style="padding: 8px; border-radius: 6px;">
+            <option value="W">British Columbia (BC)</option>
+            <option value="E">Quebec (QC)</option>
+            <option value="N">Nunavut (NU)</option>
+            <option value="W">Alberta (AB)</option>
+            <option value="E">Nova Scotia (NS)</option>
+          </select>
+          <select id="travel-ans" style="padding: 8px; border-radius: 6px;">
+            <option value="N">North</option>
+            <option value="E">East</option>
+            <option value="S">South</option>
+            <option value="W">West</option>
+          </select>
+          <button class="btn" onclick="checkDirectionPractice()">Check Direction</button>
+        </div>
+        <p id="travel-feedback" style="font-weight: bold; margin-top: 10px;"></p>
+      </div>
+
+      <!-- Density Simulator -->
+      <div class="card">
+        <h2>👥 Population Density Visualizer</h2>
+        <p><strong>Population Density</strong> = How many people live in a specific amount of space (people per km²).</p>
+        <div class="density-sim">
+          <div class="box-container">
+            <h4>Low Density (e.g., Nunavut)</h4>
+            <div class="box-visual" id="box-low"></div>
+            <p><small>Lots of open land, few people.</small></p>
+          </div>
+          <div class="box-container">
+            <h4>Medium Density (e.g., Saskatchewan)</h4>
+            <div class="box-visual" id="box-med"></div>
+            <p><small>Towns and farming communities.</small></p>
+          </div>
+          <div class="box-container">
+            <h4>High Density (e.g., PEI / Toronto)</h4>
+            <div class="box-visual" id="box-high"></div>
+            <p><small>Many people packed close together.</small></p>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 10px;">
+          <button class="btn" onclick="regenerateDots()">Regenerate Sample Populations</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: QUIZ -->
+    <div id="quiz" class="section">
+      <div class="card">
+        <h2>📝 Knowledge Check Quiz</h2>
+        <p>Answer the 5 questions below and check your score!</p>
+
+        <!-- Q1 -->
+        <div class="quiz-q" data-correct="C">
+          <p>1. How many provinces and territories make up Canada in total?</p>
+          <label class="quiz-opt"><input type="radio" name="q1" value="A"> 12 provinces and 2 territories</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="B"> 9 provinces and 4 territories</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="C"> 10 provinces and 3 territories</label>
+          <div class="feedback"></div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="quiz-q" data-correct="B">
+          <p>2. What is the capital city of Alberta (AB)?</p>
+          <label class="quiz-opt"><input type="radio" name="q2" value="A"> Calgary</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="B"> Edmonton</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="C"> Regina</label>
+          <div class="feedback"></div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="quiz-q" data-correct="A">
+          <p>3. If you leave Ontario and drive towards Quebec, which cardinal direction are you going?</p>
+          <label class="quiz-opt"><input type="radio" name="q3" value="A"> East</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="B"> West</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="C"> South</label>
+          <div class="feedback"></div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="quiz-q" data-correct="B">
+          <p>4. Which ocean lies directly to the WEST of Canada?</p>
+          <label class="quiz-opt"><input type="radio" name="q4" value="A"> Atlantic Ocean</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="B"> Pacific Ocean</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="C"> Arctic Ocean</label>
+          <div class="feedback"></div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="quiz-q" data-correct="B">
+          <p>5. Why does Nunavut have a very low population density compared to Prince Edward Island?</p>
+          <label class="quiz-opt"><input type="radio" name="q5" value="A"> Nunavut is very small in land area.</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="B"> Nunavut has a massive land area with a small total population.</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="C"> Nunavut has more skyscrapers than PEI.</label>
+          <div class="feedback"></div>
+        </div>
+
+        <button class="btn btn-submit" onclick="submitQuiz()">Submit Quiz</button>
+        <div id="quiz-results"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Region Data from Curriculum Worksheets
+    const regions = [
+      { name: "Ontario", type: "Province", abbr: "ON", cap: "Toronto" },
+      { name: "Quebec", type: "Province", abbr: "QC", cap: "Quebec City" },
+      { name: "British Columbia", type: "Province", abbr: "BC", cap: "Victoria" },
+      { name: "Alberta", type: "Province", abbr: "AB", cap: "Edmonton" },
+      { name: "Saskatchewan", type: "Province", abbr: "SK", cap: "Regina" },
+      { name: "Manitoba", type: "Province", abbr: "MB", cap: "Winnipeg" },
+      { name: "Nova Scotia", type: "Province", abbr: "NS", cap: "Halifax" },
+      { name: "New Brunswick", type: "Province", abbr: "NB", cap: "Fredericton" },
+      { name: "Newfoundland and Labrador", type: "Province", abbr: "NL", cap: "St. John's" },
+      { name: "Prince Edward Island", type: "Province", abbr: "PE", cap: "Charlottetown" },
+      { name: "Yukon", type: "Territory", abbr: "YT", cap: "Whitehorse" },
+      { name: "Northwest Territories", type: "Territory", abbr: "NT", cap: "Yellowknife" },
+      { name: "Nunavut", type: "Territory", abbr: "NU", cap: "Iqaluit" }
+    ];
+
+    // Build Interactive Flashcards
+    const provGrid = document.getElementById("prov-grid");
+    regions.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "interactive-card";
+      card.innerHTML = `
+        <strong>${item.name}</strong><br/>
+        <span class="tag">${item.type}</span>
+        <div style="margin-top: 8px; font-size: 0.85rem; color: #64748b;">(Click to reveal)</div>
+      `;
+      let flipped = false;
+      card.addEventListener("click", () => {
+        flipped = !flipped;
+        if(flipped) {
+          card.style.background = "#e0f2fe";
+          card.innerHTML = `
+            <strong>${item.name} (${item.abbr})</strong><br/>
+            <span style="color:#0369a1; font-weight:600;">Capital: ${item.cap}</span><br/>
+            <span class="tag">${item.type}</span>
+          `;
+        } else {
+          card.style.background = "#edf2f7";
+          card.innerHTML = `
+            <strong>${item.name}</strong><br/>
+            <span class="tag">${item.type}</span>
+            <div style="margin-top: 8px; font-size: 0.85rem; color: #64748b;">(Click to reveal)</div>
+          `;
+        }
+      });
+      provGrid.appendChild(card);
+    });
+
+    // Tab Navigation
+    function showTab(tabId) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    // Direction Travel Practice
+    function checkDirectionPractice() {
+      const targetDir = document.getElementById("travel-dest").value;
+      const userDir = document.getElementById("travel-ans").value;
+      const out = document.getElementById("travel-feedback");
+      if (userDir === targetDir) {
+        out.style.color = "var(--success)";
+        out.textContent = "✅ Correct! Great job using your compass points.";
+      } else {
+        out.style.color = "var(--danger)";
+        out.textContent = "❌ Not quite. Think about where Ontario is on the map and check the compass!";
+      }
+    }
+
+    // Density Dot Generator
+    function populateBox(boxId, count) {
+      const box = document.getElementById(boxId);
+      box.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.style.top = Math.random() * 135 + "px";
+        dot.style.left = Math.random() * 90 + "%";
+        box.appendChild(dot);
+      }
+    }
+
+    function regenerateDots() {
+      populateBox("box-low", 3);
+      populateBox("box-med", 20);
+      populateBox("box-high", 75);
+    }
+    regenerateDots();
+
+    // Quiz Evaluator
+    function submitQuiz() {
+      const questions = document.querySelectorAll(".quiz-q");
+      let score = 0;
+
+      questions.forEach((q, idx) => {
+        const correct = q.getAttribute("data-correct");
+        const checked = q.querySelector("input[type=radio]:checked");
+        const fb = q.querySelector(".feedback");
+        fb.style.display = "block";
+
+        if (checked && checked.value === correct) {
+          score++;
+          fb.textContent = "Correct! 🌟";
+          fb.className = "feedback correct";
+        } else {
+          fb.textContent = `Incorrect. The correct answer was option (${correct}).`;
+          fb.className = "feedback incorrect";
+        }
+      });
+
+      const results = document.getElementById("quiz-results");
+      results.style.display = "block";
+      results.innerHTML = `<h3>You scored ${score} out of ${questions.length}!</h3>
+        <p>${score === 5 ? "🎉 Perfect score! You are a Canadian geography expert!" : "Review your mistakes above and give it another try!"}</p>`;
+    }
+  </script>
+</body>
+</html>
