@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rounding Boundary Number Line Practice</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #475569;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 24px;
+      max-width: 980px;
+      margin: 0 auto 20px auto;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    h2 { color: #38bdf8; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+    /* CONTROLS BAR */
+    .setup-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      background: #0b1120;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 25px;
+    }
+    .input-group { display: flex; align-items: center; gap: 10px; }
+    input[type="number"], select {
+      background: var(--surface);
+      color: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    input[type="number"]:focus, select:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #0369a1; }
+    .btn-rand { background: #f59e0b; color: #0f172a; }
+    .btn-rand:hover { background: #d97706; }
+
+    /* STAGE AND NUMBER LINE */
+    .stage {
+      position: relative;
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 40px 20px 50px 20px;
+      margin-top: 15px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    .prompt-banner {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #0369a1;
+    }
+
+    .line-wrapper {
+      position: relative;
+      max-width: 860px;
+      margin: 0 auto;
+      height: 260px;
+    }
+
+    /* THE BLACK HORIZONTAL NUMBER LINE */
+    .number-line {
+      position: absolute;
+      top: 140px;
+      left: 40px;
+      right: 40px;
+      height: 4px;
+      background: #000000;
+    }
+
+    /* 3 BOUNDARY TICKS */
+    .boundary-station {
+      position: absolute;
+      top: 0;
+      width: 220px;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .station-left { left: 10%; }
+    .station-mid { left: 50%; }
+    .station-right { left: 90%; }
+
+    /* 4 BOXES ROW */
+    .options-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      z-index: 10;
+    }
+    .opt-box {
+      width: 48px;
+      height: 38px;
+      border: 2px solid #000000;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      border-radius: 4px;
+    }
+    .opt-box:hover {
+      background: #f1f5f9;
+      transform: translateY(-2px);
+      border-color: #0284c7;
+    }
+    .opt-box.correct {
+      background: var(--success) !important;
+      color: #ffffff !important;
+      border-color: #15803d !important;
+      transform: scale(1.08);
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.4);
+    }
+    .opt-box.incorrect {
+      background: var(--danger) !important;
+      color: #ffffff !important;
+      border-color: #b91c1c !important;
+      animation: shake 0.3s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* VERTICAL TICK MARK CROSSING LINE */
+    .tick-mark {
+      width: 4px;
+      height: 40px;
+      background: #000000;
+      margin-bottom: 14px;
+    }
+
+    /* PICTORIAL CIRCLES BENEATH TICKS */
+    .circle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pictorial-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 3px solid #000000;
+      position: relative;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    /* Half circle shading */
+    .circle-half {
+      background: linear-gradient(90deg, #ffffff 50%, #7dd3fc 50%);
+    }
+    /* Full circle shading */
+    .circle-full {
+      background: #7dd3fc;
+    }
+    .fraction-label {
+      font-weight: 900;
+      font-size: 1.15rem;
+      color: #38bdf8;
+    }
+
+    .boundary-label {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* FEEDBACK FOOTER */
+    .feedback-banner {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #0b1120;
+      border: 1px solid var(--border);
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🎯 Boundary Number Line Lab: Identify Min, Midpoint & Max</h2>
+    <p style="color: #cbd5e1; margin-top: 0;">
+      Click the correct number box above each boundary tick. Look at the half-shaded circle to locate the exact <strong>1/2 midpoint</strong>!
+    </p>
+
+    <!-- SETUP CONTROLS -->
+    <div class="setup-bar">
+      <div class="input-group">
+        <label for="targetNumber" style="font-weight:700; color:#94a3b8;">Target Number:</label>
+        <input type="number" id="targetNumber" value="638" min="10" max="9999" onchange="setupPractice()">
+      </div>
+
+      <div class="input-group">
+        <label for="roundTo" style="font-weight:700; color:#94a3b8;">Round To:</label>
+        <select id="roundTo" onchange="setupPractice()">
+          <option value="10">Nearest 10</option>
+          <option value="100" selected>Nearest 100</option>
+          <option value="1000">Nearest 1,000</option>
+        </select>
+      </div>
+
+      <button class="btn btn-rand" onclick="randomChallenge()">🎲 Random Challenge</button>
+    </div>
+
+    <!-- PRACTICE NUMBER LINE STAGE -->
+    <div class="stage">
+      <div class="prompt-banner" id="taskPrompt">
+        Placing boundaries for 638 to the nearest 100:
+      </div>
+
+      <div class="line-wrapper">
+        <!-- HORIZONTAL BLACK LINE -->
+        <div class="number-line"></div>
+
+        <!-- LEFT BOUNDARY (MINIMUM) -->
+        <div class="boundary-station station-left">
+          <div class="options-row" id="opts-left"></div>
+          <div class="tick-mark"></div>
+          <div class="circle-wrap">
+            <div class="pictorial-circle"></div>
+          </div>
+          <div class="boundary-label">Lower Benchmark (Min)</div>
+        </div>
+
+        <!-- CENTER BOUNDARY (MIDPOINT / 1/2) -->
+        <div class="boundary-station station-mid">
+          <div class="options-row" id="opts-mid"></div>
+          <div class="tick-mark"></div>
+          <div class="circle-wrap">
+            <div class="pictorial-circle circle-half"></div>
+            <span class="fraction-label">1/2</span>
+          </div>
+          <div class="boundary-label">Halfway Midpoint</div>
+        </div>
+
+        <!-- RIGHT BOUNDARY (MAXIMUM) -->
+        <div class="boundary-station station-right">
+          <div class="options-row" id="opts-right"></div>
+          <div class="tick-mark"></div>
+          <div class="circle-wrap">
+            <div class="pictorial-circle circle-full"></div>
+          </div>
+          <div class="boundary-label">Upper Benchmark (Max)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feedback-banner" id="statusMessage">
+      Click one box above each tick mark to place its value!
+    </div>
+  </div>
+
+  <script>
+    let currentMin = 600;
+    let currentMid = 650;
+    let currentMax = 700;
+    let completed = { left: false, mid: false, right: false };
+
+    // Audio SFX Synthesis
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq, duration=0.15, type="sine") {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e){}
+    }
+
+    function setupPractice() {
+      let num = parseInt(document.getElementById("targetNumber").value, 10);
+      if (isNaN(num) || num < 10) num = 10;
+      const step = parseInt(document.getElementById("roundTo").value, 10);
+
+      currentMin = Math.floor(num / step) * step;
+      currentMax = currentMin + step;
+      currentMid = currentMin + (step / 2);
+
+      completed = { left: false, mid: false, right: false };
+
+      const stepWord = (step === 10) ? "TEN" : (step === 100) ? "HUNDRED" : "THOUSAND";
+      document.getElementById("taskPrompt").innerHTML = 
+        `Find the boundaries for <strong>${num}</strong> rounded to the nearest <strong>${stepWord}</strong>:`;
+
+      // Generate the 4 option numbers: [min, max, mid, distractor]
+      let distractor;
+      do {
+        // Distractor close to the range
+        const offset = (Math.random() > 0.5 ? 1 : -1) * (step / (step >= 100 ? 10 : 2));
+        distractor = Math.round(currentMid + offset);
+      } while (distractor === currentMin || distractor === currentMax || distractor === currentMid);
+
+      const baseNumbers = [currentMin, currentMid, currentMax, distractor];
+
+      // Build 4 option boxes on all three boundaries
+      buildOptionsRow("opts-left", [...baseNumbers], currentMin, "left");
+      buildOptionsRow("opts-mid", [...baseNumbers], currentMid, "mid");
+      buildOptionsRow("opts-right", [...baseNumbers], currentMax, "right");
+
+      document.getElementById("statusMessage").textContent = "Click one box above each tick mark to place its value!";
+      document.getElementById("statusMessage").style.color = "#f8fafc";
+    }
+
+    function buildOptionsRow(containerId, options, correctValue, positionKey) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      // Shuffle options uniquely for this tick
+      options.sort(() => Math.random() - 0.5);
+
+      options.forEach(val => {
+        const box = document.createElement("div");
+        box.className = "opt-box";
+        box.textContent = val;
+        box.onclick = () => handleBoxClick(box, val, correctValue, positionKey);
+        container.appendChild(box);
+      });
+    }
+
+    function handleBoxClick(boxElement, selectedValue, correctValue, positionKey) {
+      if (completed[positionKey]) return; // Already answered correctly
+
+      if (selectedValue === correctValue) {
+        boxElement.classList.add("correct");
+        completed[positionKey] = true;
+        playBeep(620, 0.15, "triangle");
+
+        // Disable other siblings in this station
+        const siblings = boxElement.parentElement.children;
+        for (let sibling of siblings) {
+          if (sibling !== boxElement) {
+            sibling.style.opacity = "0.35";
+            sibling.style.pointerEvents = "none";
+          }
+        }
+
+        checkOverallProgress();
+      } else {
+        boxElement.classList.add("incorrect");
+        playBeep(220, 0.25, "sawtooth");
+        setTimeout(() => {
+          boxElement.classList.remove("incorrect");
+        }, 600);
+      }
+    }
+
+    function checkOverallProgress() {
+      const msg = document.getElementById("statusMessage");
+      if (completed.left && completed.mid && completed.right) {
+        let num = parseInt(document.getElementById("targetNumber").value, 10);
+        let rounded = (num >= currentMid) ? currentMax : currentMin;
+        msg.innerHTML = `🌟 <strong>PERFECT BOUNDARIES!</strong> ${num} is ${num >= currentMid ? 'past or at' : 'before'} the midpoint (${currentMid}), so it rounds to <strong>${rounded}</strong>!`;
+        msg.style.color = "var(--success)";
+        playBeep(750, 0.35, "sine");
+      } else {
+        msg.textContent = "Great choice! Keep finding the other boundary markers.";
+        msg.style.color = "#38bdf8";
+      }
+    }
+
+    function randomChallenge() {
+      const steps = [10, 100, 1000];
+      const step = steps[Math.floor(Math.random() * steps.length)];
+      document.getElementById("roundTo").value = step;
+
+      let randNum;
+      if (step === 10) randNum = Math.floor(Math.random() * 90) + 10;
+      else if (step === 100) randNum = Math.floor(Math.random() * 900) + 100;
+      else randNum = Math.floor(Math.random() * 9000) + 1000;
+
+      document.getElementById("targetNumber").value = randNum;
+      setupPractice();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      setupPractice();
+    });
+  </script>
+</body>
+</html>

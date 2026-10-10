@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>The Great Canadian Capital Quest | የካናዳ ዋና ከተሞች ጉዞ</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <!-- Tone.js for web audio -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  
+  <!-- Google Fonts: Fredoka, Nunito, Noto Sans Ethiopic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Fredoka', 'Noto Sans Ethiopic', sans-serif;
+      touch-action: manipulation;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .font-num {
+      font-family: 'Nunito', sans-serif;
+    }
+    .font-hand {
+      font-family: 'Patrick Hand', 'Noto Sans Ethiopic', cursive;
+    }
+
+    /* 3D Flashcard Flip Mechanics */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .card-flipped {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 1.5rem;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Print Stylesheet for Cut-Out / Foldable Flashcards */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #printContainer {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0.25in !important;
+      }
+      .print-card-box {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      @page {
+        size: letter portrait;
+        margin: 0.35in;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col items-center select-none overflow-x-hidden p-2 sm:p-4 pb-12">
+
+
+  <!-- Top App Navigation Bar (Hidden when printing) -->
+  <header class="no-print w-full max-w-5xl bg-white/95 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-800 p-3 sm:p-4 mb-3 shadow-md flex flex-wrap items-center justify-between gap-2.5">
+    
+    <!-- Branding -->
+    <div class="flex items-center space-x-2.5 sm:space-x-3">
+      <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-tr from-red-600 via-rose-500 to-amber-500 rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-md border-2 border-red-500/30 flex-shrink-0 text-white">
+        🍁
+      </div>
+      <div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <h1 id="appTitle" class="text-base sm:text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+            The Great Canadian Capital Quest
+          </h1>
+          <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/70 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+            10 Provinces & 3 Territories
+          </span>
+        </div>
+        <p id="appSubtitle" class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
+          Study with 3D flashcards, play matching games, or print study cards!
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Utilities: Theme Toggle, Print, Bilingual Switch, Fullscreen, Mute -->
+    <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
+      <!-- Theme Toggle (Light / Dark) -->
+      <button onclick="toggleTheme()" id="btnTheme" class="touch-target px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold transition active:scale-95 flex items-center gap-1 shadow-sm" title="Toggle Light/Dark Theme">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText" class="hidden sm:inline">Dark</span>
+      </button>
+
+      <!-- Print Flashcards Shortcut Button -->
+      <button onclick="openPrintView()" class="touch-target px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold shadow-md transition active:scale-95 flex items-center gap-1.5" title="Print all cards">
+        <span>🖨️</span>
+        <span id="txtPrintBtn">Print Cards</span>
+      </button>
+
+      <!-- Bilingual Toggle (English / Amharic) -->
+      <button onclick="toggleLanguage()" class="touch-target px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center gap-1">
+        <span>🌐</span>
+        <span id="txtLang">አማርኛ</span>
+      </button>
+
+      <!-- Fullscreen Toggle (F) -->
+      <button onclick="toggleFullScreen()" class="touch-target px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold transition active:scale-95 shadow-sm" title="Fullscreen (F)">
+        <span id="fsIcon">⛶</span>
+      </button>
+
+      <!-- Audio Mute -->
+      <button onclick="toggleAudio()" class="touch-target p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-sm transition active:scale-95 shadow-sm">
+        <span id="audioIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+
+  <!-- Mode Navigation Pill Bar (Hidden when printing) -->
+  <nav class="no-print w-full max-w-5xl bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 mb-3 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar shadow-sm">
+    <button onclick="switchGameMode('flashcard')" id="tab_flashcard" class="flex-1 min-w-[110px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-white bg-red-600 shadow-md">
+      🃏 <span id="tabLbl_flashcard">Flashcards</span>
+    </button>
+    <button onclick="switchGameMode('quiz')" id="tab_quiz" class="flex-1 min-w-[110px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+      ⚡ <span id="tabLbl_quiz">Speed Quiz</span>
+    </button>
+    <button onclick="switchGameMode('match')" id="tab_match" class="flex-1 min-w-[110px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+      🧩 <span id="tabLbl_match">Matching Game</span>
+    </button>
+    <button onclick="switchGameMode('grid')" id="tab_grid" class="flex-1 min-w-[110px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+      📜 <span id="tabLbl_grid">Map Directory</span>
+    </button>
+    <button onclick="switchGameMode('print')" id="tab_print" class="flex-1 min-w-[110px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+      🖨️ <span id="tabLbl_print">Print Sheet</span>
+    </button>
+  </nav>
+
+  <!-- Score & Streak Ribbon (Hidden when printing) -->
+  <div class="no-print w-full max-w-5xl flex items-center justify-between bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-2 mb-3 text-xs sm:text-sm font-bold shadow-sm">
+    <div class="flex items-center gap-3">
+      <span class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+        ⭐ <span id="lblScore">Score:</span> <strong id="scoreVal" class="text-slate-900 dark:text-white text-base">0</strong>
+      </span>
+      <span class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+        🔥 <span id="lblStreak">Streak:</span> <strong id="streakVal" class="text-slate-900 dark:text-white text-base">0</strong>
+      </span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="regionFilterPill" class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full font-bold border border-slate-200 dark:border-slate-700">
+        13 Provinces & Territories
+      </span>
+    </div>
+  </div>
+
+  <!-- Dynamic Game Arena Container (Interactive View) -->
+  <main class="no-print w-full max-w-5xl flex flex-col items-center justify-center min-h-[460px] relative" id="gameArena">
+    <!-- Active view content loaded dynamically -->
+  </main>
+
+
+  <!-- Printable Flashcards Container (Visible when printing or in 'Print Sheet' mode) -->
+  <section id="printContainer" class="hidden w-full max-w-5xl bg-white text-slate-900 p-4 sm:p-6 rounded-3xl border-2 border-slate-300 shadow-xl my-2">
+    <!-- Print Header -->
+    <div class="border-b-2 border-slate-800 pb-4 mb-6 flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
+          <span>🇨🇦</span> <span id="printSheetTitle">Canadian Provinces & Territories Flashcard Set</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 font-medium" id="printSheetSub">
+          Cut along the solid lines and fold along the center dashed line for double-sided study cards.
+        </p>
+      </div>
+      <div class="no-print flex items-center gap-2">
+        <button onclick="window.print()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition active:scale-95 flex items-center gap-2">
+          <span>🖨️</span> <span id="btnPrintNow">Print Now</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 13 Foldable Flashcards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6" id="printableCardsGrid">
+      <!-- Injected via JavaScript -->
+    </div>
+  </section>
+
+  <!-- Bottom Footer (Hidden during printing) -->
+  <footer class="no-print w-full max-w-5xl mt-4 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
+    <span id="txtFooter">Canada has 10 provinces & 3 territories • Federal Capital: Ottawa, Ontario</span>
+  </footer>
+
+
+  <script>
+    // Complete Canadian Dataset (10 Provinces & 3 Territories)
+    const canadaData = [
+      {
+        id: "bc", type: "province",
+        nameEn: "British Columbia", nameAm: "ብሪቲሽ ኮሎምቢያ",
+        capitalEn: "Victoria", capitalAm: "ቪክቶሪያ",
+        largestEn: "Vancouver", largestAm: "ቫንኩቨር",
+        flag: "🇨🇦", icon: "🏔️",
+        gradientLight: "from-blue-500 to-emerald-500",
+        factEn: "Famous for the Rocky Mountains and Pacific coastline. Victoria is located on Vancouver Island!",
+        factAm: "በሮኪ ተራሮች እና በፓሲፊክ ውቅያኖስ ዳርቻ ይታወቃል። ቪክቶሪያ የምትገኘው በቫንኩቨር ደሴት ላይ ነው!"
+      },
+      {
+        id: "ab", type: "province",
+        nameEn: "Alberta", nameAm: "አልበርታ",
+        capitalEn: "Edmonton", capitalAm: "ኤድመንተን",
+        largestEn: "Calgary", largestAm: "ካልጋሪ",
+        flag: "🇨🇦", icon: "🌾",
+        gradientLight: "from-amber-500 to-yellow-500",
+        factEn: "Home to Banff and Jasper national parks. Provincial capital is Edmonton (not Calgary).",
+        factAm: "የባንፍ እና ጃስፐር ብሔራዊ ፓርኮች መገኛ። ዋና ከተማዋ ኤድመንተን ናት (ካልጋሪ አይደለችም)።"
+      },
+      {
+        id: "sk", type: "province",
+        nameEn: "Saskatchewan", nameAm: "ሳስካቸዋን",
+        capitalEn: "Regina", capitalAm: "ሪጃይና",
+        largestEn: "Saskatoon", largestAm: "ሳስካቱን",
+        flag: "🇨🇦", icon: "🚜",
+        gradientLight: "from-emerald-500 to-amber-500",
+        factEn: "Known as Canada's breadbasket prairie land. Capital is Regina (home to RCMP Academy).",
+        factAm: "የካናዳ ዋና የስንዴና የእርሻ ማዕከል። ዋና ከተማዋ ሪጃይና ናት።"
+      },
+      {
+        id: "mb", type: "province",
+        nameEn: "Manitoba", nameAm: "ማኒቶባ",
+        capitalEn: "Winnipeg", capitalAm: "ዊኒፔግ",
+        largestEn: "Winnipeg", largestAm: "ዊኒፔግ",
+        flag: "🇨🇦", icon: "🐻‍❄️",
+        gradientLight: "from-sky-500 to-blue-600",
+        factEn: "Churchill, Manitoba is known as the Polar Bear Capital of the World! Capital is Winnipeg.",
+        factAm: "በማኒቶባ የምትገኘው ቸርችል 'የዋልታ ድቦች ዓለም አቀፍ ዋና ከተማ' ተብላ ትታወቃለች! ዋና ከተማዋ ዊኒፔግ ናት።"
+      },
+      {
+        id: "on", type: "province",
+        nameEn: "Ontario", nameAm: "ኦንታሪዮ",
+        capitalEn: "Toronto", capitalAm: "ቶሮንቶ",
+        largestEn: "Toronto", largestAm: "ቶሮንቶ",
+        flag: "🇨🇦", icon: "🏙️",
+        gradientLight: "from-red-500 to-indigo-600",
+        factEn: "Toronto is Ontario's capital. Canada's federal capital is Ottawa (also located in Ontario)!",
+        factAm: "ቶሮንቶ የኦንታሪዮ ዋና ከተማ ናት። የካናዳ ፌዴራላዊ ዋና ከተማ ኦታዋ ናት (እሷም ኦንታሪዮ ውስጥ ትገኛለች)!"
+      },
+      {
+        id: "qc", type: "province",
+        nameEn: "Quebec", nameAm: "ኩዊቤክ",
+        capitalEn: "Quebec City", capitalAm: "ኩዊቤክ ሲቲ",
+        largestEn: "Montreal", largestAm: "ሞንትሪያል",
+        flag: "🇨🇦", icon: "⚜️",
+        gradientLight: "from-blue-600 to-indigo-700",
+        factEn: "Canada's largest province by area with French as its official language. Capital is Quebec City.",
+        factAm: "በቆዳ ስፋት ትልቁ ግዛት ሲሆን ይፋዊ ቋንቋው ፈረንሳይኛ ነው። ዋና ከተማዋ ኩዊቤክ ሲቲ ናት።"
+      },
+      {
+        id: "nb", type: "province",
+        nameEn: "New Brunswick", nameAm: "ኒው ብረንስዊክ",
+        capitalEn: "Fredericton", capitalAm: "ፍሬደሪክተን",
+        largestEn: "Moncton", largestAm: "ሞንክተን",
+        flag: "🇨🇦", icon: "🌊",
+        gradientLight: "from-teal-500 to-cyan-600",
+        factEn: "Canada's only officially bilingual province (English & French). Capital is Fredericton.",
+        factAm: "ብቸኛዋ ይፋዊ ሁለት ቋንቋ ተናጋሪ (እንግሊዝኛ እና ፈረንሳይኛ) ግዛት ናት። ዋና ከተማዋ ፍሬደሪክተን ናት።"
+      },
+      {
+        id: "ns", type: "province",
+        nameEn: "Nova Scotia", nameAm: "ኖቫ ስኮሻ",
+        capitalEn: "Halifax", capitalAm: "ሃሊፋክስ",
+        largestEn: "Halifax", largestAm: "ሃሊፋክስ",
+        flag: "🇨🇦", icon: "⚓",
+        gradientLight: "from-blue-500 to-cyan-500",
+        factEn: "Famous for the Bay of Fundy with world-record tides. Capital is the historic port of Halifax.",
+        factAm: "በዓለም ከፍተኛው የባሕር ማዕበል መገኛ በሆነው ፈንዲ ባሕረ ሰላጤ ትታወቃለች። ዋና ከተማዋ ሃሊፋክስ ናት።"
+      },
+      {
+        id: "pe", type: "province",
+        nameEn: "Prince Edward Island", nameAm: "ፕሪንስ ኤድዋርድ ደሴት",
+        capitalEn: "Charlottetown", capitalAm: "ሻርሎትታውን",
+        largestEn: "Charlottetown", largestAm: "ሻርሎትታውን",
+        flag: "🇨🇦", icon: "🏖️",
+        gradientLight: "from-rose-500 to-orange-500",
+        factEn: "Canada's smallest province. Charlottetown is famous as the Birthplace of Confederation.",
+        factAm: "በቆዳ ስፋትና በሕዝብ ቁጥር የካናዳ ትንሿ ግዛት። ሻርሎትታውን የካናዳ ውሕደት የተወለደችበት ናት።"
+      },
+      {
+        id: "nl", type: "province",
+        nameEn: "Newfoundland and Labrador", nameAm: "ኒውፈውንላንድ እና ላብራዶር",
+        capitalEn: "St. John's", capitalAm: "ሴንት ጆንስ",
+        largestEn: "St. John's", largestAm: "ሴንት ጆንስ",
+        flag: "🇨🇦", icon: "⛵",
+        gradientLight: "from-indigo-500 to-purple-600",
+        factEn: "Easternmost point in North America! St. John's (NL) is distinct from Saint John (NB).",
+        factAm: "የሰሜን አሜሪካ ምሥራቃዊ ጫፍ! ሴንት ጆንስ (NL) ከሴይንት ጆን (NB) የተለየች ናት።"
+      },
+      {
+        id: "yt", type: "territory",
+        nameEn: "Yukon", nameAm: "ዩኮን",
+        capitalEn: "Whitehorse", capitalAm: "ዋይትሆርስ",
+        largestEn: "Whitehorse", largestAm: "ዋይትሆርስ",
+        flag: "🇨🇦", icon: "⛏️",
+        gradientLight: "from-amber-500 to-rose-600",
+        factEn: "Famous for the Klondike Gold Rush and Mount Logan, Canada's highest peak.",
+        factAm: "በታሪካዊው የወርቅ ፍለጋ (Klondike Gold Rush) እና በካናዳ ረጅሙ ተራራ ማውንት ሎጋን ትታወቃለች።"
+      },
+      {
+        id: "nt", type: "territory",
+        nameEn: "Northwest Territories", nameAm: "ሰሜን ምዕራብ ግዛቶች",
+        capitalEn: "Yellowknife", capitalAm: "የሎውናይፍ",
+        largestEn: "Yellowknife", largestAm: "የሎውናይፍ",
+        flag: "🇨🇦", icon: "✨",
+        gradientLight: "from-emerald-500 to-teal-700",
+        factEn: "The Aurora Capital of North America! Capital sits next to Great Slave Lake.",
+        factAm: "የሰሜናዊው የብርሃን ድምቀት (Aurora) መገኛ። ዋና ከተማዋ የሎውናይፍ ናት።"
+      },
+      {
+        id: "nu", type: "territory",
+        nameEn: "Nunavut", nameAm: "ኑናቩት",
+        capitalEn: "Iqaluit", capitalAm: "ኢካሉኢት",
+        largestEn: "Iqaluit", largestAm: "ኢካሉኢት",
+        flag: "🇨🇦", icon: "❄️",
+        gradientLight: "from-cyan-500 to-blue-700",
+        factEn: "Canada's newest and largest territory. Capital is Iqaluit on Baffin Island.",
+        factAm: "የካናዳ አዲሷ (በ1999 የተመሠረተች) እና እጅግ ሰፊዋ ግዛት። ዋና ከተማዋ ኢካሉኢት ትባላለች።"
+      }
+    ];
+
+    // State Variables
+    let currentTheme = 'light'; // Default to clean modern Light Mode
+    let currentLang = 'en'; // 'en' | 'am'
+    let currentMode = 'flashcard'; // 'flashcard' | 'quiz' | 'match' | 'grid' | 'print'
+    let cardIndex = 0;
+    let isFlipped = false;
+    let score = 0;
+    let streak = 0;
+    let soundEnabled = true;
+    let synth = null;
+
+    // Matching Game state
+    let matchDeck = [];
+    let matchSelected = [];
+    let matchMatchedCount = 0;
+
+    // Bilingual Dictionary
+    const i18n = {
+      en: {
+        appTitle: "The Great Canadian Capital Quest",
+        appSubtitle: "Study with 3D flashcards, play matching games, or print study cards!",
+        langBtn: "አማርኛ",
+        themeDark: "Dark",
+        themeLight: "Light",
+        printBtn: "Print Cards",
+        score: "Score:",
+        streak: "Streak:",
+        tabFlashcard: "Flashcards",
+        tabQuiz: "Speed Quiz",
+        tabMatch: "Matching Game",
+        tabGrid: "Map Directory",
+        tabPrint: "Print Sheet",
+        flipCardPrompt: "Click or Tap card to flip!",
+        capitalLbl: "Capital City:",
+        largestLbl: "Largest City:",
+        didYouKnow: "Did you know?",
+        quizQuestion: "What is the capital city of",
+        nextCard: "Next Card ➔",
+        prevCard: "← Previous",
+        randomCard: "🎲 Shuffle",
+        restartMatch: "Restart Game ↺",
+        matchPairsRemaining: "Pairs remaining:",
+        footerText: "Canada has 10 provinces & 3 territories • Federal Capital: Ottawa, Ontario",
+        territoryBadge: "Territory",
+        provinceBadge: "Province",
+        printTitle: "Canadian Provinces & Territories Flashcard Set",
+        printSub: "Cut along the outer solid border and fold along the center line for 2-sided flashcards.",
+        btnPrintNow: "Print Now",
+        cardSideFront: "FRONT (PROVINCE / TERRITORY)",
+        cardSideBack: "BACK (CAPITAL CITY & FACTS)"
+      },
+      am: {
+        appTitle: "የካናዳ ዋና ከተሞች ጉዞ (Quest)",
+        appSubtitle: "በፍላሽ ካርዶች ይማሩ፣ ጨዋታዎችን ይጫወቱ ወይም የታተሙ ካርዶችን ያዘጋጁ!",
+        langBtn: "English",
+        themeDark: "ጨለማ",
+        themeLight: "ብርሃን",
+        printBtn: "ካርዶችን አትም",
+        score: "ውጤት፡",
+        streak: "ተከታታይ፡",
+        tabFlashcard: "ፍላሽ ካርዶች",
+        tabQuiz: "ፈጣን ፈተና",
+        tabMatch: "የማዛመድ ጨዋታ",
+        tabGrid: "ሙሉ ዝርዝር",
+        tabPrint: "የህትመት ገጽ",
+        flipCardPrompt: "መልሱን ለማየት ካርዱን ይንኩት!",
+        capitalLbl: "ዋና ከተማ፡",
+        largestLbl: "ትልቋ ከተማ፡",
+        didYouKnow: "ይህን ያውቁ ኖሯል?",
+        quizQuestion: "የዚህ ግዛት ዋና ከተማ ማን ናት፦",
+        nextCard: "ቀጣይ ካርድ ➔",
+        prevCard: "← የቀደመው",
+        randomCard: "🎲 በዘፈቀደ",
+        restartMatch: "እንደገና ጀምር ↺",
+        matchPairsRemaining: "የቀሩት ጥንዶች፡",
+        footerText: "ካናዳ 10 ክፍላተ-ሀገራትና 3 ግዛቶች አሏት • ፌዴራላዊ ዋና ከተማዋ ኦታዋ ናት",
+        territoryBadge: "ግዛት (Territory)",
+        provinceBadge: "ክፍለ-ሀገር (Province)",
+        printTitle: "የካናዳ ክፍላተ-ሀገራትና ዋና ከተሞች የህትመት ፍላሽ ካርዶች",
+        printSub: "በውጨኛው መስመር ቆርጠው በመሀከሉ በማጠፍ ባለ ሁለት ገጽ የጥናት ካርዶችን ያዘጋጁ።",
+        btnPrintNow: "አሁን አትም (Print)",
+        cardSideFront: "የፊት ገጽ (ክፍለ-ሀገር / ግዛት)",
+        cardSideBack: "የጀርባ ገጽ (ዋና ከተማ እና መረጃ)"
+      }
+    };
+
+    // Tone.js Sound Synthesizer
+    function playTone(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!synth && window.Tone) {
+          synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          synth.volume.value = -12;
+        }
+        if (Tone.context.state !== 'running') Tone.start();
+        if (type === 'flip') {
+          synth.triggerAttackRelease(["C4"], "32n");
+        } else if (type === 'correct') {
+          synth.triggerAttackRelease(["C5", "E5", "G5"], "16n");
+        } else if (type === 'wrong') {
+          synth.triggerAttackRelease(["F3", "Db3"], "16n");
+        } else if (type === 'win') {
+          synth.triggerAttackRelease(["C5", "G5", "C6"], "8n");
+        }
+      } catch (e) {}
+    }
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('audioIcon').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+
+
+    // Theme Switcher (Light / Dark)
+    function toggleTheme() {
+      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+      applyTheme();
+    }
+
+    function applyTheme() {
+      const isDark = currentTheme === 'dark';
+      document.documentElement.classList.toggle('dark', isDark);
+      document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('themeText').textContent = isDark ? i18n[currentLang].themeLight : i18n[currentLang].themeDark;
+    }
+
+    // Full Screen Toggle
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFs = !document.fullscreenElement;
+      document.getElementById('fsIcon').textContent = isFs ? '⛶' : '↙';
+    });
+
+    // Language Toggle
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'am' : 'en';
+      document.getElementById('txtLang').textContent = i18n[currentLang].langBtn;
+      document.getElementById('appTitle').textContent = i18n[currentLang].appTitle;
+      document.getElementById('appSubtitle').textContent = i18n[currentLang].appSubtitle;
+      document.getElementById('txtPrintBtn').textContent = i18n[currentLang].printBtn;
+      document.getElementById('lblScore').textContent = i18n[currentLang].score;
+      document.getElementById('lblStreak').textContent = i18n[currentLang].streak;
+      document.getElementById('tabLbl_flashcard').textContent = i18n[currentLang].tabFlashcard;
+      document.getElementById('tabLbl_quiz').textContent = i18n[currentLang].tabQuiz;
+      document.getElementById('tabLbl_match').textContent = i18n[currentLang].tabMatch;
+      document.getElementById('tabLbl_grid').textContent = i18n[currentLang].tabGrid;
+      document.getElementById('tabLbl_print').textContent = i18n[currentLang].tabPrint;
+      document.getElementById('txtFooter').textContent = i18n[currentLang].footerText;
+
+      document.getElementById('printSheetTitle').textContent = i18n[currentLang].printTitle;
+      document.getElementById('printSheetSub').textContent = i18n[currentLang].printSub;
+      document.getElementById('btnPrintNow').textContent = i18n[currentLang].btnPrintNow;
+
+      applyTheme();
+      renderCurrentMode();
+      renderPrintableCards();
+    }
+
+
+    function switchGameMode(mode) {
+      currentMode = mode;
+      const tabs = ['flashcard', 'quiz', 'match', 'grid', 'print'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab_' + t);
+        if (t === mode) {
+          btn.className = "flex-1 min-w-[110px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-white bg-red-600 shadow-md";
+        } else {
+          btn.className = "flex-1 min-w-[110px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+        }
+      });
+
+      const arena = document.getElementById('gameArena');
+      const printContainer = document.getElementById('printContainer');
+
+      if (mode === 'print') {
+        arena.classList.add('hidden');
+        printContainer.classList.remove('hidden');
+        renderPrintableCards();
+        printContainer.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        printContainer.classList.add('hidden');
+        arena.classList.remove('hidden');
+        renderCurrentMode();
+      }
+    }
+
+    function openPrintView() {
+      switchGameMode('print');
+    }
+
+    function renderCurrentMode() {
+      const arena = document.getElementById('gameArena');
+      arena.innerHTML = '';
+      if (currentMode === 'flashcard') renderFlashcard(arena);
+      else if (currentMode === 'quiz') renderQuiz(arena);
+      else if (currentMode === 'match') initMatchGame(arena);
+      else if (currentMode === 'grid') renderGrid(arena);
+    }
+
+    // 1. Interactive 3D Flashcard Mode
+    function renderFlashcard(container) {
+      const item = canadaData[cardIndex];
+      const isProv = item.type === 'province';
+      const typeBadge = isProv ? i18n[currentLang].provinceBadge : i18n[currentLang].territoryBadge;
+
+      const name = currentLang === 'en' ? item.nameEn : item.nameAm;
+      const capital = currentLang === 'en' ? item.capitalEn : item.capitalAm;
+      const largest = currentLang === 'en' ? item.largestEn : item.largestAm;
+      const fact = currentLang === 'en' ? item.factEn : item.factAm;
+
+      container.innerHTML = `
+        <div class="w-full max-w-md h-[400px] perspective-1000 select-none cursor-pointer" onclick="flipCard()">
+          <div id="flashCardElement" class="card-inner ${isFlipped ? 'card-flipped' : ''} shadow-xl">
+            
+            <!-- FRONT (Clean Light / Dark Modern Card) -->
+            <div class="card-front bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-6 sm:p-8 flex flex-col justify-between text-slate-900 dark:text-white shadow-lg">
+              <div class="flex items-center justify-between">
+                <span class="text-xs uppercase font-extrabold px-3 py-1 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 rounded-full border border-red-200 dark:border-red-800">
+                  ${typeBadge} (${cardIndex + 1}/13)
+                </span>
+                <span class="text-3xl">${item.icon}</span>
+              </div>
+
+              <div class="text-center my-auto">
+                <div class="text-5xl mb-3 drop-shadow-sm">${item.flag}</div>
+                <h2 class="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">${name}</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 font-semibold">${i18n[currentLang].flipCardPrompt}</p>
+              </div>
+
+              <div class="flex justify-between items-center text-xs text-slate-400 font-bold border-t border-slate-100 dark:border-slate-800 pt-3">
+                <span>🍁 Canada Geography</span>
+                <span class="text-red-600 dark:text-red-400">Tap to flip 🔄</span>
+              </div>
+            </div>
+
+            <!-- BACK (Reveal Capital & Facts) -->
+            <div class="card-back bg-gradient-to-br ${item.gradientLight} dark:from-slate-900 dark:to-slate-800 border-2 border-white/20 dark:border-red-500/40 p-6 sm:p-8 flex flex-col justify-between text-white shadow-xl">
+              <div>
+                <div class="flex items-center justify-between border-b border-white/30 dark:border-slate-700 pb-2 mb-3">
+                  <span class="text-xs uppercase font-extrabold text-white/90">${name}</span>
+                  <span class="text-xs bg-black/30 dark:bg-red-950 text-white dark:text-red-300 border border-white/20 dark:border-red-700 px-2.5 py-0.5 rounded-full font-bold">Answer</span>
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <div class="text-xs uppercase font-extrabold text-white/80 dark:text-slate-400">${i18n[currentLang].capitalLbl}</div>
+                    <div class="text-3xl sm:text-4xl font-black text-amber-200 dark:text-amber-400 tracking-tight mt-0.5 flex items-center gap-2">
+                      🏛️ <span>${capital}</span>
+                    </div>
+                  </div>
+
+                  ${largest ? `
+                  <div>
+                    <div class="text-xs uppercase font-extrabold text-white/80 dark:text-slate-400">${i18n[currentLang].largestLbl}</div>
+                    <div class="text-base sm:text-lg font-bold text-white/95 dark:text-slate-200">${largest}</div>
+                  </div>` : ''}
+
+                  <div class="p-3 bg-black/25 dark:bg-slate-800/80 rounded-xl border border-white/20 dark:border-slate-700 text-xs text-white/90 dark:text-slate-300 leading-relaxed">
+                    <strong class="text-amber-300 dark:text-amber-400 font-bold block mb-0.5">💡 ${i18n[currentLang].didYouKnow}</strong>
+                    ${fact}
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center text-xs text-white/80 dark:text-slate-500 font-semibold pt-1">
+                Tap to flip back 🔄
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Flashcard Controls -->
+        <div class="w-full max-w-md flex items-center justify-between gap-2 mt-5">
+          <button onclick="prevCard()" class="touch-target px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-bold text-slate-800 dark:text-white transition active:scale-95 shadow-sm">
+            ${i18n[currentLang].prevCard}
+          </button>
+          <button onclick="shuffleCard()" class="touch-target px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 transition active:scale-95 shadow-sm">
+            ${i18n[currentLang].randomCard}
+          </button>
+          <button onclick="nextCard()" class="touch-target px-5 py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-xs sm:text-sm font-bold text-white shadow-md transition active:scale-95">
+            ${i18n[currentLang].nextCard}
+          </button>
+        </div>
+      `;
+    }
+
+    function flipCard() {
+      isFlipped = !isFlipped;
+      playTone('flip');
+      const el = document.getElementById('flashCardElement');
+      if (el) el.classList.toggle('card-flipped', isFlipped);
+    }
+
+    function nextCard() {
+      isFlipped = false;
+      cardIndex = (cardIndex + 1) % canadaData.length;
+      renderFlashcard(document.getElementById('gameArena'));
+    }
+
+    function prevCard() {
+      isFlipped = false;
+      cardIndex = (cardIndex - 1 + canadaData.length) % canadaData.length;
+      renderFlashcard(document.getElementById('gameArena'));
+    }
+
+    function shuffleCard() {
+      isFlipped = false;
+      cardIndex = Math.floor(Math.random() * canadaData.length);
+      renderFlashcard(document.getElementById('gameArena'));
+    }
+
+
+    // 2. Speed Multiple-Choice Quiz Mode
+    let currentQuizTarget = null;
+    let quizAnswered = false;
+
+    function renderQuiz(container) {
+      quizAnswered = false;
+      currentQuizTarget = canadaData[Math.floor(Math.random() * canadaData.length)];
+      
+      const targetName = currentLang === 'en' ? currentQuizTarget.nameEn : currentQuizTarget.nameAm;
+      const correctCapital = currentLang === 'en' ? currentQuizTarget.capitalEn : currentQuizTarget.capitalAm;
+
+      const distractors = canadaData
+        .filter(d => d.id !== currentQuizTarget.id)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3)
+        .map(d => currentLang === 'en' ? d.capitalEn : d.capitalAm);
+
+      const options = [correctCapital, ...distractors].sort(() => 0.5 - Math.random());
+
+      container.innerHTML = `
+        <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col items-center text-center">
+          
+          <div class="text-4xl mb-2">${currentQuizTarget.icon}</div>
+          <span class="text-xs uppercase font-extrabold tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 px-3 py-1 rounded-full mb-3">
+            ${currentQuizTarget.type === 'province' ? i18n[currentLang].provinceBadge : i18n[currentLang].territoryBadge}
+          </span>
+
+          <h2 class="text-sm sm:text-base font-semibold text-slate-500 dark:text-slate-400">
+            ${i18n[currentLang].quizQuestion}
+          </h2>
+          <div class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mt-1 mb-6 tracking-tight">
+            ${targetName}
+          </div>
+
+          <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3" id="quizOptionsGrid">
+            ${options.map(opt => `
+              <button onclick="handleQuizAnswer('${opt}', '${correctCapital}')" class="touch-target py-3.5 px-4 bg-slate-50 dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-slate-700 border-2 border-slate-200 dark:border-slate-700 hover:border-amber-400 rounded-2xl text-base font-bold text-slate-800 dark:text-white transition active:scale-95 shadow-sm">
+                ${opt}
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Feedback Banner -->
+          <div id="quizFeedback" class="w-full mt-5 p-3 rounded-2xl hidden text-sm font-bold flex items-center justify-between shadow-sm">
+            <span id="quizFeedbackText"></span>
+            <button onclick="renderQuiz(document.getElementById('gameArena'))" class="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-black shadow hover:opacity-90 transition active:scale-95">
+              Next ➔
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function handleQuizAnswer(selected, correct) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+
+      const fb = document.getElementById('quizFeedback');
+      const fbTxt = document.getElementById('quizFeedbackText');
+      fb.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-900', 'border-emerald-300', 'dark:bg-emerald-950/80', 'dark:text-emerald-200', 'bg-rose-100', 'text-rose-900', 'border-rose-300', 'dark:bg-rose-950/80', 'dark:text-rose-200');
+
+      if (selected === correct) {
+        score += 10;
+        streak += 1;
+        playTone('correct');
+        confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
+        fb.classList.add('bg-emerald-100', 'text-emerald-900', 'border', 'border-emerald-300', 'dark:bg-emerald-950/80', 'dark:text-emerald-200');
+        fbTxt.textContent = `🎉 Correct! ${selected} is the capital!`;
+      } else {
+        streak = 0;
+        playTone('wrong');
+        fb.classList.add('bg-rose-100', 'text-rose-900', 'border', 'border-rose-300', 'dark:bg-rose-950/80', 'dark:text-rose-200');
+        fbTxt.textContent = `❌ Not quite! The capital is ${correct}.`;
+      }
+
+      document.getElementById('scoreVal').textContent = score;
+      document.getElementById('streakVal').textContent = streak;
+    }
+
+    // 3. 12-Card Memory Matching Game
+    function initMatchGame(container) {
+      matchSelected = [];
+      matchMatchedCount = 0;
+
+      const sample = canadaData.sort(() => 0.5 - Math.random()).slice(0, 6);
+      matchDeck = [];
+
+      sample.forEach(item => {
+        matchDeck.push({
+          id: item.id,
+          type: 'name',
+          label: currentLang === 'en' ? item.nameEn : item.nameAm,
+          icon: item.icon,
+          matched: false
+        });
+        matchDeck.push({
+          id: item.id,
+          type: 'capital',
+          label: currentLang === 'en' ? item.capitalEn : item.capitalAm,
+          icon: '🏛️',
+          matched: false
+        });
+      });
+
+      matchDeck.sort(() => 0.5 - Math.random());
+      renderMatchBoard(container);
+    }
+
+    function renderMatchBoard(container) {
+      container.innerHTML = `
+        <div class="w-full max-w-2xl flex flex-col items-center">
+          
+          <div class="w-full flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 mb-3 px-2">
+            <span>${i18n[currentLang].matchPairsRemaining} <strong id="matchRemainingCount" class="text-amber-600 dark:text-amber-400 font-mono text-sm">${6 - matchMatchedCount}</strong></span>
+            <button onclick="initMatchGame(document.getElementById('gameArena'))" class="px-3 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-300 dark:border-slate-700 transition">
+              ${i18n[currentLang].restartMatch}
+            </button>
+          </div>
+
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full" id="matchCardsGrid">
+            ${matchDeck.map((card, idx) => `
+              <button onclick="handleMatchCardClick(${idx})" id="mcard_${idx}" class="touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all duration-200 active:scale-95 shadow-sm ${
+                card.matched 
+                  ? 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-500 text-emerald-800 dark:text-emerald-200 opacity-60 pointer-events-none' 
+                  : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white'
+              }">
+                <span class="text-xl sm:text-2xl mb-1">${card.icon}</span>
+                <span class="text-xs sm:text-sm font-bold leading-tight">${card.label}</span>
+              </button>
+            `).join('')}
+          </div>
+
+          <div id="matchVictoryBanner" class="hidden mt-6 p-4 bg-emerald-50 dark:bg-emerald-950 border-2 border-emerald-500 rounded-2xl text-center shadow-lg">
+            <div class="text-3xl mb-1">🏆</div>
+            <div class="text-lg font-black text-emerald-800 dark:text-emerald-300">Outstanding! All Pairs Matched!</div>
+            <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">+50 Bonus Points Awarded!</p>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function handleMatchCardClick(idx) {
+      const card = matchDeck[idx];
+      if (card.matched || matchSelected.includes(idx) || matchSelected.length >= 2) return;
+
+      playTone('flip');
+      matchSelected.push(idx);
+
+      const el = document.getElementById(`mcard_${idx}`);
+      el.classList.remove('bg-white', 'dark:bg-slate-800', 'border-slate-200', 'dark:border-slate-700');
+      el.classList.add('bg-amber-500', 'border-amber-300', 'text-white', 'scale-105');
+
+      if (matchSelected.length === 2) {
+        const [firstIdx, secondIdx] = matchSelected;
+        const c1 = matchDeck[firstIdx];
+        const c2 = matchDeck[secondIdx];
+
+        if (c1.id === c2.id && c1.type !== c2.type) {
+          c1.matched = true;
+          c2.matched = true;
+          matchMatchedCount++;
+          score += 15;
+          streak += 1;
+          playTone('correct');
+
+          setTimeout(() => {
+            const el1 = document.getElementById(`mcard_${firstIdx}`);
+            const el2 = document.getElementById(`mcard_${secondIdx}`);
+            el1.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-emerald-100 dark:bg-emerald-950/50 border-emerald-500 text-emerald-800 dark:text-emerald-200 opacity-60 pointer-events-none";
+            el2.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-emerald-100 dark:bg-emerald-950/50 border-emerald-500 text-emerald-800 dark:text-emerald-200 opacity-60 pointer-events-none";
+            
+            document.getElementById('matchRemainingCount').textContent = 6 - matchMatchedCount;
+            document.getElementById('scoreVal').textContent = score;
+            document.getElementById('streakVal').textContent = streak;
+
+            matchSelected = [];
+
+            if (matchMatchedCount === 6) {
+              score += 50;
+              document.getElementById('scoreVal').textContent = score;
+              playTone('win');
+              confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+              document.getElementById('matchVictoryBanner').classList.remove('hidden');
+            }
+          }, 350);
+
+        } else {
+          streak = 0;
+          playTone('wrong');
+          document.getElementById('streakVal').textContent = streak;
+
+          setTimeout(() => {
+            const el1 = document.getElementById(`mcard_${firstIdx}`);
+            const el2 = document.getElementById(`mcard_${secondIdx}`);
+            if (el1) {
+              el1.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white";
+            }
+            if (el2) {
+              el2.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white";
+            }
+            matchSelected = [];
+          }, 700);
+        }
+      }
+    }
+
+    // 4. Map Directory Grid Mode
+    function renderGrid(container) {
+      container.innerHTML = `
+        <div class="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+          ${canadaData.map((d, i) => {
+            const name = currentLang === 'en' ? d.nameEn : d.nameAm;
+            const cap = currentLang === 'en' ? d.capitalEn : d.capitalAm;
+            const fact = currentLang === 'en' ? d.factEn : d.factAm;
+            return `
+              <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:border-red-400 dark:hover:border-slate-600 transition">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-2xl">${d.icon}</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                      ${d.type === 'province' ? i18n[currentLang].provinceBadge : i18n[currentLang].territoryBadge}
+                    </span>
+                  </div>
+                  <h3 class="text-lg font-black text-slate-900 dark:text-white">${name}</h3>
+                  <div class="mt-2 flex items-center gap-1.5 text-red-600 dark:text-amber-400 font-extrabold text-sm">
+                    <span>🏛️ ${i18n[currentLang].capitalLbl}</span> <span>${cap}</span>
+                  </div>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                    ${fact}
+                  </p>
+                </div>
+                <button onclick="cardIndex = ${i}; switchGameMode('flashcard');" class="mt-4 w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition">
+                  Practice in Flashcard ➔
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+
+    // 5. Printable 2-Sided / Foldable Flashcard Generator
+    function renderPrintableCards() {
+      const grid = document.getElementById('printableCardsGrid');
+      grid.innerHTML = canadaData.map((item, idx) => {
+        const name = currentLang === 'en' ? item.nameEn : item.nameAm;
+        const capital = currentLang === 'en' ? item.capitalEn : item.capitalAm;
+        const largest = currentLang === 'en' ? item.largestEn : item.largestAm;
+        const fact = currentLang === 'en' ? item.factEn : item.factAm;
+        const typeBadge = item.type === 'province' ? i18n[currentLang].provinceBadge : i18n[currentLang].territoryBadge;
+
+        return `
+          <!-- Double-Sided Flashcard Unit with Center Fold Line -->
+          <div class="print-card-box border-2 border-slate-800 rounded-2xl overflow-hidden bg-white text-slate-900 shadow-sm flex flex-col justify-between">
+            
+            <div class="grid grid-cols-2 divide-x-2 divide-dashed divide-slate-400 min-h-[175px]">
+              
+              <!-- LEFT HALF (FRONT OF CARD) -->
+              <div class="p-3.5 sm:p-4 flex flex-col justify-between bg-slate-50/60">
+                <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase">
+                  <span>${typeBadge} • #${idx + 1}</span>
+                  <span>${item.icon}</span>
+                </div>
+                <div class="text-center my-auto py-2">
+                  <div class="text-3xl sm:text-4xl mb-1">${item.flag}</div>
+                  <h4 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug">${name}</h4>
+                </div>
+                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center border-t border-slate-200 pt-1">
+                  ${i18n[currentLang].cardSideFront}
+                </div>
+              </div>
+
+              <!-- RIGHT HALF (BACK OF CARD / ANSWER & FACTS) -->
+              <div class="p-3.5 sm:p-4 flex flex-col justify-between bg-amber-50/40">
+                <div class="flex items-center justify-between text-[10px] font-bold text-amber-800 uppercase">
+                  <span>${name}</span>
+                  <span class="bg-amber-200 text-amber-950 px-1.5 py-0.2 rounded font-black">Answer</span>
+                </div>
+                <div class="my-auto py-1 space-y-1">
+                  <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">${i18n[currentLang].capitalLbl}</span>
+                    <strong class="text-base sm:text-lg font-black text-red-700 tracking-tight flex items-center gap-1">
+                      🏛️ ${capital}
+                    </strong>
+                  </div>
+                  ${largest ? `
+                  <div class="text-[11px] font-semibold text-slate-700">
+                    <span class="text-slate-500">${i18n[currentLang].largestLbl}</span> ${largest}
+                  </div>` : ''}
+                  <p class="text-[10px] text-slate-600 leading-tight italic pt-0.5">
+                    ${fact}
+                  </p>
+                </div>
+                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center border-t border-slate-200 pt-1">
+                  ${i18n[currentLang].cardSideBack}
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Fold/Cut Indicator Footer -->
+            <div class="bg-slate-100 border-t border-slate-300 py-1 px-3 text-[9px] text-slate-500 font-bold flex justify-between">
+              <span>✂️ Cut along outer edge</span>
+              <span>↔️ Fold along dashed center</span>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') toggleFullScreen();
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        // Natively handled print
+      } else if (currentMode === 'flashcard') {
+        if (e.key === 'ArrowRight' || e.key === ' ') nextCard();
+        if (e.key === 'ArrowLeft') prevCard();
+        if (e.key === 'Enter') flipCard();
+      }
+    });
+
+    // App Initialization
+    window.onload = function() {
+      applyTheme();
+      renderCurrentMode();
+      renderPrintableCards();
+    };
+  </script>
+</body>
+</html>

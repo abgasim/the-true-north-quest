@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>The Great Canadian Capital Quest | የካናዳ ዋና ከተሞች ጉዞ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Fredoka', 'Noto Sans Ethiopic', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #31102f 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      touch-action: manipulation;
+    }
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .card-flipped {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 1.5rem;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+    }
+    .touch-target {
+      min-height: 48px;
+      min-width: 48px;
+    }
+    /* Hide scrollbars for pill bars */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); }
+    }
+    .glow-maple {
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center p-3 sm:p-6 transition-all">
+
+  <!-- Header -->
+  <header class="w-full max-w-4xl flex items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg border-2 border-red-400 glow-maple">
+        🍁
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+          <span id="txtTitle">The Great Canadian Capital Quest</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-300 font-medium" id="txtSubtitle">
+          Master all 10 provinces & 3 territories with interactive games
+        </p>
+      </div>
+    </div>
+
+    <!-- Utilities Toolbar -->
+    <div class="flex items-center gap-2">
+      <button onclick="toggleLang()" class="touch-target px-3 py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs sm:text-sm font-bold text-white transition active:scale-95 shadow">
+        🌐 <span id="langBtnText">አማርኛ</span>
+      </button>
+      <button onclick="toggleFullScreen()" class="touch-target px-3 py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs sm:text-sm font-bold text-white transition active:scale-95 shadow" title="Fullscreen (F)">
+        ⛶
+      </button>
+      <button onclick="toggleAudio()" class="touch-target p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded-xl text-white text-sm transition shadow">
+        <span id="audioIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Mode Pill Bar -->
+  <nav class="w-full max-w-4xl bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/80 mb-4 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar shadow-lg">
+    <button onclick="switchGameMode('flashcard')" id="tab_flashcard" class="flex-1 min-w-[100px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-white bg-red-600 shadow-md">
+      🃏 <span id="tabLbl_flashcard">Flashcards</span>
+    </button>
+    <button onclick="switchGameMode('quiz')" id="tab_quiz" class="flex-1 min-w-[100px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-400 hover:text-white">
+      ⚡ <span id="tabLbl_quiz">Speed Quiz</span>
+    </button>
+    <button onclick="switchGameMode('match')" id="tab_match" class="flex-1 min-w-[100px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-400 hover:text-white">
+      🧩 <span id="tabLbl_match">Matching Game</span>
+    </button>
+    <button onclick="switchGameMode('grid')" id="tab_grid" class="flex-1 min-w-[100px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-400 hover:text-white">
+      📜 <span id="tabLbl_grid">Map Directory</span>
+    </button>
+  </nav>
+
+  <!-- Game Stats / Score Ribbon -->
+  <div class="w-full max-w-4xl flex items-center justify-between bg-slate-800/60 border border-slate-700/50 rounded-2xl px-4 py-2.5 mb-4 text-xs sm:text-sm font-bold">
+    <div class="flex items-center gap-3">
+      <span class="flex items-center gap-1.5 text-amber-400">
+        ⭐ <span id="lblScore">Score:</span> <strong id="scoreVal" class="text-white text-base">0</strong>
+      </span>
+      <span class="flex items-center gap-1.5 text-emerald-400">
+        🔥 <span id="lblStreak">Streak:</span> <strong id="streakVal" class="text-white text-base">0</strong>
+      </span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="regionFilterPill" class="text-xs bg-slate-700 text-slate-200 px-2.5 py-1 rounded-full font-bold">
+        13 Provinces & Territories
+      </span>
+    </div>
+  </div>
+
+  <!-- Dynamic Game Container -->
+  <main class="w-full max-w-4xl flex flex-col items-center justify-center min-h-[460px] relative" id="gameArena">
+    <!-- View content loaded via JS -->
+  </main>
+
+  <!-- Bottom Helper Bar -->
+  <footer class="w-full max-w-4xl mt-4 text-center text-xs text-slate-400 font-medium">
+    <span id="txtFooter">Canada has 10 provinces & 3 territories • Federal Capital: Ottawa, Ontario</span>
+  </footer>
+
+  <script>
+    // Full bilingual database of all 13 Provinces and Territories
+    const canadaData = [
+      {
+        id: "bc", type: "province",
+        nameEn: "British Columbia", nameAm: "ብሪቲሽ ኮሎምቢያ",
+        capitalEn: "Victoria", capitalAm: "ቪክቶሪያ",
+        largestEn: "Vancouver", largestAm: "ቫንኩቨር",
+        flag: "🇨🇦", icon: "🏔️", color: "from-blue-600 to-emerald-600",
+        factEn: "Famous for the Rocky Mountains and Pacific coastline. Often confused with Vancouver!",
+        factAm: "በሮኪ ተራሮች እና በፓሲፊክ ውቅያኖስ ዳርቻ ይታወቃል። ብዙ ጊዜ ከቫንኩቨር ጋር ይምታታል!"
+      },
+      {
+        id: "ab", type: "province",
+        nameEn: "Alberta", nameAm: "አልበርታ",
+        capitalEn: "Edmonton", capitalAm: "ኤድመንተን",
+        largestEn: "Calgary", largestAm: "ካልጋሪ",
+        flag: "🇨🇦", icon: "🌾", color: "from-amber-600 to-yellow-600",
+        factEn: "Home to Banff and Jasper national parks. Provincial capital is Edmonton (not Calgary).",
+        factAm: "የባንፍ እና ጃስፐር ብሔራዊ ፓርኮች መገኛ። ዋና ከተማዋ ኤድመንተን ናት (ካልጋሪ አይደለችም)።"
+      },
+      {
+        id: "sk", type: "province",
+        nameEn: "Saskatchewan", nameAm: "ሳስካቸዋን",
+        capitalEn: "Regina", capitalAm: "ሪጃይና",
+        largestEn: "Saskatoon", largestAm: "ሳስካቱን",
+        flag: "🇨🇦", icon: "🚜", color: "from-green-600 to-yellow-500",
+        factEn: "Canada's breadbasket prairie land. Capital is Regina (home to RCMP Academy).",
+        factAm: "የካናዳ ዋና የስንዴና የእርሻ ማዕከል። ዋና ከተማዋ ሪጃይና ናት።"
+      },
+      {
+        id: "mb", type: "province",
+        nameEn: "Manitoba", nameAm: "ማኒቶባ",
+        capitalEn: "Winnipeg", capitalAm: "ዊኒፔግ",
+        largestEn: "Winnipeg", largestAm: "ዊኒፔግ",
+        flag: "🇨🇦", icon: "🐻‍❄️", color: "from-sky-600 to-blue-700",
+        factEn: "Churchill, Manitoba is known as the Polar Bear Capital of the World!",
+        factAm: "በማኒቶባ የምትገኘው ቸርችል 'የዋልታ ድቦች ዓለም አቀፍ ዋና ከተማ' ተብላ ትታወቃለች!"
+      },
+      {
+        id: "on", type: "province",
+        nameEn: "Ontario", nameAm: "ኦንታሪዮ",
+        capitalEn: "Toronto", capitalAm: "ቶሮንቶ",
+        largestEn: "Toronto", largestAm: "ቶሮንቶ",
+        flag: "🇨🇦", icon: "🏙️", color: "from-red-600 to-indigo-700",
+        factEn: "Toronto is Ontario's capital. Canada's federal national capital is Ottawa (also in Ontario)!",
+        factAm: "ቶሮንቶ የኦንታሪዮ ዋና ከተማ ናት። የካናዳ ፌዴራላዊ ዋና ከተማ ኦታዋ ናት (እሷም ኦንታሪዮ ውስጥ ትገኛለች)!"
+      },
+      {
+        id: "qc", type: "province",
+        nameEn: "Quebec", nameAm: "ኩዊቤክ",
+        capitalEn: "Quebec City", capitalAm: "ኩዊቤክ ሲቲ",
+        largestEn: "Montreal", largestAm: "ሞንትሪያል",
+        flag: "🇨🇦", icon: "⚜️", color: "from-blue-700 to-indigo-800",
+        factEn: "Canada's largest province by area with French as its official language. Capital is Quebec City.",
+        factAm: "በቆዳ ስፋት ትልቁ ግዛት ሲሆን ይፋዊ ቋንቋው ፈረንሳይኛ ነው። ዋና ከተማዋ ኩዊቤክ ሲቲ ናት።"
+      },
+      {
+        id: "nb", type: "province",
+        nameEn: "New Brunswick", nameAm: "ኒው ብረንስዊክ",
+        capitalEn: "Fredericton", capitalAm: "ፍሬደሪክተን",
+        largestEn: "Moncton", largestAm: "ሞንክተን",
+        flag: "🇨🇦", icon: "🌊", color: "from-teal-600 to-cyan-700",
+        factEn: "Canada's only officially bilingual province (English & French). Capital is Fredericton.",
+        factAm: "ብቸኛዋ ይፋዊ ሁለት ቋንቋ ተናጋሪ (እንግሊዝኛ እና ፈረንሳይኛ) ግዛት ናት። ዋና ከተማዋ ፍሬደሪክተን ናት።"
+      },
+      {
+        id: "ns", type: "province",
+        nameEn: "Nova Scotia", nameAm: "ኖቫ ስኮሻ",
+        capitalEn: "Halifax", capitalAm: "ሃሊፋክስ",
+        largestEn: "Halifax", largestAm: "ሃሊፋክስ",
+        flag: "🇨🇦", icon: "⚓", color: "from-blue-600 to-cyan-600",
+        factEn: "Known for the Bay of Fundy with the world's highest tides. Capital is the historic port of Halifax.",
+        factAm: "በዓለም ከፍተኛው የባሕር ማዕበል መገኛ በሆነው ፈንዲ ባሕረ ሰላጤ ትታወቃለች። ዋና ከተማዋ ሃሊፋክስ ናት።"
+      },
+      {
+        id: "pe", type: "province",
+        nameEn: "Prince Edward Island", nameAm: "ፕሪንስ ኤድዋርድ ደሴት",
+        capitalEn: "Charlottetown", capitalAm: "ሻርሎትታውን",
+        largestEn: "Charlottetown", largestAm: "ሻርሎትታውን",
+        flag: "🇨🇦", icon: "🏖️", color: "from-red-500 to-amber-600",
+        factEn: "Canada's smallest province in both area and population. Charlottetown is the Birthplace of Confederation.",
+        factAm: "በቆዳ ስፋትና በሕዝብ ቁጥር የካናዳ ትንሿ ግዛት። ሻርሎትታውን የካናዳ ውሕደት የተወለደችበት ናት።"
+      },
+      {
+        id: "nl", type: "province",
+        nameEn: "Newfoundland and Labrador", nameAm: "ኒውፈውንላንድ እና ላብራዶር",
+        capitalEn: "St. John's", capitalAm: "ሴንት ጆንስ",
+        largestEn: "St. John's", largestAm: "ሴንት ጆንስ",
+        flag: "🇨🇦", icon: "⛵", color: "from-indigo-600 to-purple-700",
+        factEn: "Easternmost point in North America! Note: St. John's (NL) is different from Saint John (NB).",
+        factAm: "የሰሜን አሜሪካ ምሥራቃዊ ጫፍ! ማስታወሻ፡ ሴንት ጆንስ (NL) ከሴይንት ጆን (NB) የተለየች ናት።"
+      },
+      {
+        id: "yt", type: "territory",
+        nameEn: "Yukon", nameAm: "ዩኮን",
+        capitalEn: "Whitehorse", capitalAm: "ዋይትሆርስ",
+        largestEn: "Whitehorse", largestAm: "ዋይትሆርስ",
+        flag: "🇨🇦", icon: "⛏️", color: "from-amber-600 to-rose-700",
+        factEn: "Famous for the historic Klondike Gold Rush and Mount Logan, Canada's tallest peak.",
+        factAm: "በታሪካዊው የወርቅ ፍለጋ (Klondike Gold Rush) እና በካናዳ ረጅሙ ተራራ ማውንት ሎጋን ትታወቃለች።"
+      },
+      {
+        id: "nt", type: "territory",
+        nameEn: "Northwest Territories", nameAm: "ሰሜን ምዕራብ ግዛቶች",
+        capitalEn: "Yellowknife", capitalAm: "የሎውናይፍ",
+        largestEn: "Yellowknife", largestAm: "የሎውናይፍ",
+        flag: "🇨🇦", icon: "✨", color: "from-emerald-600 to-teal-800",
+        factEn: "Known as the Aurora Capital of North America! Capital sits right beside Great Slave Lake.",
+        factAm: "የሰሜናዊው የብርሃን ድምቀት (Aurora) መገኛ። ዋና ከተማዋ የሎውናይፍ በታላቁ የስሌቭ ሐይቅ አጠገብ ናት።"
+      },
+      {
+        id: "nu", type: "territory",
+        nameEn: "Nunavut", nameAm: "ኑናቩት",
+        capitalEn: "Iqaluit", capitalAm: "ኢካሉኢት",
+        largestEn: "Iqaluit", largestAm: "ኢካሉኢት",
+        flag: "🇨🇦", icon: "❄️", color: "from-cyan-600 to-blue-900",
+        factEn: "Canada's newest (created in 1999) and largest territory. Capital is Iqaluit on Baffin Island.",
+        factAm: "የካናዳ አዲሷ (በ1999 የተመሠረተች) እና እጅግ ሰፊዋ ግዛት። ዋና ከተማዋ ኢካሉኢት ትባላለች።"
+      }
+    ];
+
+    // State management
+    let currentLang = 'en'; // 'en' | 'am'
+    let currentMode = 'flashcard'; // 'flashcard' | 'quiz' | 'match' | 'grid'
+    let cardIndex = 0;
+    let isFlipped = false;
+    let score = 0;
+    let streak = 0;
+    let audioOn = true;
+    let synth = null;
+
+    // Matching Game state
+    let matchDeck = [];
+    let matchSelected = [];
+    let matchMatchedCount = 0;
+
+    const i18n = {
+      en: {
+        title: "The Great Canadian Capital Quest",
+        subtitle: "Master all 10 provinces & 3 territories with interactive games",
+        langBtn: "አማርኛ",
+        score: "Score:",
+        streak: "Streak:",
+        tabFlashcard: "Flashcards",
+        tabQuiz: "Speed Quiz",
+        tabMatch: "Matching Game",
+        tabGrid: "Map Directory",
+        flipCardPrompt: "Click or Tap card to flip!",
+        capitalLbl: "Capital City:",
+        largestLbl: "Largest City:",
+        didYouKnow: "Did you know?",
+        quizQuestion: "What is the capital city of",
+        nextCard: "Next Card ➔",
+        prevCard: "← Previous",
+        randomCard: "🎲 Shuffle",
+        restartMatch: "Restart Match Game ↺",
+        matchPairsRemaining: "Pairs remaining:",
+        footerText: "Canada has 10 provinces & 3 territories • Federal Capital: Ottawa, Ontario",
+        territoryBadge: "Territory",
+        provinceBadge: "Province"
+      },
+      am: {
+        title: "የካናዳ ዋና ከተሞች ጉዞ (Quest)",
+        subtitle: "10ሩንም ክፍላተ-ሀገራት እና 3ቱን ግዛቶች በአዝናኝ ጨዋታዎች ይማሩ",
+        langBtn: "English",
+        score: "ውጤት፡",
+        streak: "ተከታታይ፡",
+        tabFlashcard: "ፍላሽ ካርዶች",
+        tabQuiz: "ፈጣን ፈተና",
+        tabMatch: "የማዛመድ ጨዋታ",
+        tabGrid: "ሙሉ ዝርዝር",
+        flipCardPrompt: "መልሱን ለማየት ካርዱን ይንኩት!",
+        capitalLbl: "ዋና ከተማ፡",
+        largestLbl: "ትልቋ ከተማ፡",
+        didYouKnow: "ይህን ያውቁ ኖሯል?",
+        quizQuestion: "የዚህ ግዛት ዋና ከተማ ማን ናት፦",
+        nextCard: "ቀጣይ ካርድ ➔",
+        prevCard: "← የቀደመው",
+        randomCard: "🎲 በዘፈቀደ",
+        restartMatch: "እንደገና ጀምር ↺",
+        matchPairsRemaining: "የቀሩት ጥንዶች፡",
+        footerText: "ካናዳ 10 ክፍላተ-ሀገራትና 3 ግዛቶች አሏት • ፌዴራላዊ ዋና ከተማዋ ኦታዋ ናት",
+        territoryBadge: "ግዛት (Territory)",
+        provinceBadge: "ክፍለ-ሀገር (Province)"
+      }
+    };
+
+    // Tone.js Sound Synthesizer
+    function playTone(type) {
+      if (!audioOn) return;
+      try {
+        if (!synth) synth = new Tone.PolySynth(Tone.Synth).toDestination();
+        if (Tone.context.state !== 'running') Tone.start();
+        if (type === 'flip') {
+          synth.triggerAttackRelease(["C4"], "32n");
+        } else if (type === 'correct') {
+          synth.triggerAttackRelease(["C5", "E5", "G5"], "16n");
+        } else if (type === 'wrong') {
+          synth.triggerAttackRelease(["F3", "Db3"], "16n");
+        } else if (type === 'win') {
+          synth.triggerAttackRelease(["C5", "G5", "C6"], "8n");
+        }
+      } catch (e) {
+        console.warn("Audio Context init pending user interaction.");
+      }
+    }
+
+    function toggleAudio() {
+      audioOn = !audioOn;
+      document.getElementById('audioIcon').textContent = audioOn ? '🔊' : '🔇';
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === 'en' ? 'am' : 'en';
+      document.getElementById('langBtnText').textContent = i18n[currentLang].langBtn;
+      document.getElementById('txtTitle').textContent = i18n[currentLang].title;
+      document.getElementById('txtSubtitle').textContent = i18n[currentLang].subtitle;
+      document.getElementById('lblScore').textContent = i18n[currentLang].score;
+      document.getElementById('lblStreak').textContent = i18n[currentLang].streak;
+      document.getElementById('tabLbl_flashcard').textContent = i18n[currentLang].tabFlashcard;
+      document.getElementById('tabLbl_quiz').textContent = i18n[currentLang].tabQuiz;
+      document.getElementById('tabLbl_match').textContent = i18n[currentLang].tabMatch;
+      document.getElementById('tabLbl_grid').textContent = i18n[currentLang].tabGrid;
+      document.getElementById('txtFooter').textContent = i18n[currentLang].footerText;
+
+      renderCurrentMode();
+    }
+
+    function switchGameMode(mode) {
+      currentMode = mode;
+      const tabs = ['flashcard', 'quiz', 'match', 'grid'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab_' + t);
+        if (t === mode) {
+          btn.className = "flex-1 min-w-[100px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-white bg-red-600 shadow-md";
+        } else {
+          btn.className = "flex-1 min-w-[100px] touch-target py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition text-slate-400 hover:text-white";
+        }
+      });
+      renderCurrentMode();
+    }
+
+    function renderCurrentMode() {
+      const arena = document.getElementById('gameArena');
+      arena.innerHTML = '';
+      if (currentMode === 'flashcard') renderFlashcard(arena);
+      else if (currentMode === 'quiz') renderQuiz(arena);
+      else if (currentMode === 'match') initMatchGame(arena);
+      else if (currentMode === 'grid') renderGrid(arena);
+    }
+
+    // ==========================================
+    // 1. 3D INTERACTIVE FLASHCARD MODE
+    // ==========================================
+    function renderFlashcard(container) {
+      const item = canadaData[cardIndex];
+      const isProv = item.type === 'province';
+      const typeBadge = isProv ? i18n[currentLang].provinceBadge : i18n[currentLang].territoryBadge;
+
+      const name = currentLang === 'en' ? item.nameEn : item.nameAm;
+      const capital = currentLang === 'en' ? item.capitalEn : item.capitalAm;
+      const largest = currentLang === 'en' ? item.largestEn : item.largestAm;
+      const fact = currentLang === 'en' ? item.factEn : item.factAm;
+
+      container.innerHTML = `
+        <div class="w-full max-w-md h-[400px] perspective-1000 select-none cursor-pointer" onclick="flipCard()">
+          <div id="flashCardElement" class="card-inner ${isFlipped ? 'card-flipped' : ''} shadow-2xl">
+            
+            <!-- FRONT -->
+            <div class="card-front bg-gradient-to-br ${item.color} p-6 sm:p-8 flex flex-col justify-between border-2 border-white/20 text-white shadow-xl">
+              <div class="flex items-center justify-between">
+                <span class="text-xs uppercase font-extrabold px-3 py-1 bg-black/30 backdrop-blur-md rounded-full border border-white/20">
+                  ${typeBadge} (${cardIndex + 1}/13)
+                </span>
+                <span class="text-3xl">${item.icon}</span>
+              </div>
+
+              <div class="text-center my-auto">
+                <div class="text-5xl mb-3 drop-shadow-md">${item.flag}</div>
+                <h2 class="text-3xl sm:text-4xl font-black tracking-tight drop-shadow-md">${name}</h2>
+                <p class="text-xs text-white/80 mt-3 font-semibold">${i18n[currentLang].flipCardPrompt}</p>
+              </div>
+
+              <div class="flex justify-between items-center text-xs opacity-80 font-bold border-t border-white/20 pt-3">
+                <span>🍁 Canada Geography</span>
+                <span>Tap to flip 🔄</span>
+              </div>
+            </div>
+
+            <!-- BACK -->
+            <div class="card-back bg-slate-900 border-2 border-red-500/50 p-6 sm:p-8 flex flex-col justify-between text-white shadow-xl">
+              <div>
+                <div class="flex items-center justify-between border-b border-slate-700/80 pb-3 mb-4">
+                  <span class="text-xs uppercase font-bold text-red-400">${name}</span>
+                  <span class="text-xs bg-red-950 text-red-300 border border-red-700 px-2 py-0.5 rounded-full font-bold">Answer</span>
+                </div>
+
+                <div class="space-y-4">
+                  <div>
+                    <div class="text-xs uppercase font-extrabold text-slate-400">${i18n[currentLang].capitalLbl}</div>
+                    <div class="text-3xl sm:text-4xl font-black text-amber-400 tracking-tight mt-1 flex items-center gap-2">
+                      🏛️ <span>${capital}</span>
+                    </div>
+                  </div>
+
+                  ${largest ? `
+                  <div>
+                    <div class="text-xs uppercase font-extrabold text-slate-400">${i18n[currentLang].largestLbl}</div>
+                    <div class="text-lg font-bold text-slate-200 mt-0.5">${largest}</div>
+                  </div>` : ''}
+
+                  <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed">
+                    <strong class="text-amber-400 font-bold block mb-1">💡 ${i18n[currentLang].didYouKnow}</strong>
+                    ${fact}
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center text-xs text-slate-500 font-semibold pt-2">
+                Tap to flip back 🔄
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="w-full max-w-md flex items-center justify-between gap-2 mt-5">
+          <button onclick="prevCard()" class="touch-target px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs sm:text-sm font-bold text-white transition active:scale-95 shadow">
+            ${i18n[currentLang].prevCard}
+          </button>
+          <button onclick="shuffleCard()" class="touch-target px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs sm:text-sm font-bold text-amber-400 transition active:scale-95 shadow">
+            ${i18n[currentLang].randomCard}
+          </button>
+          <button onclick="nextCard()" class="touch-target px-5 py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-xs sm:text-sm font-bold text-white shadow-lg transition active:scale-95">
+            ${i18n[currentLang].nextCard}
+          </button>
+        </div>
+      `;
+    }
+
+    function flipCard() {
+      isFlipped = !isFlipped;
+      playTone('flip');
+      const el = document.getElementById('flashCardElement');
+      if (el) el.classList.toggle('card-flipped', isFlipped);
+    }
+
+    function nextCard() {
+      isFlipped = false;
+      cardIndex = (cardIndex + 1) % canadaData.length;
+      renderFlashcard(document.getElementById('gameArena'));
+    }
+
+    function prevCard() {
+      isFlipped = false;
+      cardIndex = (cardIndex - 1 + canadaData.length) % canadaData.length;
+      renderFlashcard(document.getElementById('gameArena'));
+    }
+
+    function shuffleCard() {
+      isFlipped = false;
+      cardIndex = Math.floor(Math.random() * canadaData.length);
+      renderFlashcard(document.getElementById('gameArena'));
+    }
+
+    // ==========================================
+    // 2. SPEED MULTIPLE-CHOICE QUIZ MODE
+    // ==========================================
+    let currentQuizTarget = null;
+    let quizAnswered = false;
+
+    function renderQuiz(container) {
+      quizAnswered = false;
+      currentQuizTarget = canadaData[Math.floor(Math.random() * canadaData.length)];
+      
+      const targetName = currentLang === 'en' ? currentQuizTarget.nameEn : currentQuizTarget.nameAm;
+      const correctCapital = currentLang === 'en' ? currentQuizTarget.capitalEn : currentQuizTarget.capitalAm;
+
+      // Pick 3 random distractors
+      const distractors = canadaData
+        .filter(d => d.id !== currentQuizTarget.id)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3)
+        .map(d => currentLang === 'en' ? d.capitalEn : d.capitalAm);
+
+      const options = [correctCapital, ...distractors].sort(() => 0.5 - Math.random());
+
+      container.innerHTML = `
+        <div class="w-full max-w-lg bg-slate-900/90 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
+          
+          <div class="text-4xl mb-2">${currentQuizTarget.icon}</div>
+          <span class="text-xs uppercase font-extrabold tracking-wider text-red-400 bg-red-950/60 border border-red-800/80 px-3 py-1 rounded-full mb-3">
+            ${currentQuizTarget.type === 'province' ? i18n[currentLang].provinceBadge : i18n[currentLang].territoryBadge}
+          </span>
+
+          <h2 class="text-sm sm:text-base font-semibold text-slate-300">
+            ${i18n[currentLang].quizQuestion}
+          </h2>
+          <div class="text-3xl sm:text-4xl font-black text-white mt-1 mb-6 tracking-tight">
+            ${targetName}
+          </div>
+
+          <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3" id="quizOptionsGrid">
+            ${options.map(opt => `
+              <button onclick="handleQuizAnswer('${opt}', '${correctCapital}')" class="touch-target py-3.5 px-4 bg-slate-800 hover:bg-slate-700/80 border-2 border-slate-600 hover:border-amber-400 rounded-2xl text-base font-bold text-white transition active:scale-95 shadow">
+                ${opt}
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Feedback Box -->
+          <div id="quizFeedback" class="w-full mt-5 p-3 rounded-2xl hidden text-sm font-bold flex items-center justify-between">
+            <span id="quizFeedbackText"></span>
+            <button onclick="renderQuiz(document.getElementById('gameArena'))" class="px-4 py-2 bg-white text-slate-900 rounded-xl text-xs font-black shadow hover:bg-slate-100 transition active:scale-95">
+              Next ➔
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function handleQuizAnswer(selected, correct) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+
+      const fb = document.getElementById('quizFeedback');
+      const fbTxt = document.getElementById('quizFeedbackText');
+      fb.classList.remove('hidden', 'bg-emerald-900/80', 'text-emerald-200', 'border-emerald-600', 'bg-rose-900/80', 'text-rose-200', 'border-rose-600');
+
+      if (selected === correct) {
+        score += 10;
+        streak += 1;
+        playTone('correct');
+        confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
+        fb.classList.add('bg-emerald-900/80', 'text-emerald-200', 'border', 'border-emerald-600');
+        fbTxt.textContent = `🎉 Correct! ${selected} is the capital!`;
+      } else {
+        streak = 0;
+        playTone('wrong');
+        fb.classList.add('bg-rose-900/80', 'text-rose-200', 'border', 'border-rose-600');
+        fbTxt.textContent = `❌ Not quite! The capital is ${correct}.`;
+      }
+
+      document.getElementById('scoreVal').textContent = score;
+      document.getElementById('streakVal').textContent = streak;
+    }
+
+    // ==========================================
+    // 3. MATCHING PAIR GAME (MEMORY & AGILITY)
+    // ==========================================
+    function initMatchGame(container) {
+      matchSelected = [];
+      matchMatchedCount = 0;
+
+      // Pick 6 random provinces/territories for a 12-card board
+      const sample = canadaData.sort(() => 0.5 - Math.random()).slice(0, 6);
+      matchDeck = [];
+
+      sample.forEach(item => {
+        // Province card
+        matchDeck.push({
+          id: item.id,
+          type: 'name',
+          label: currentLang === 'en' ? item.nameEn : item.nameAm,
+          icon: item.icon,
+          matched: false
+        });
+        // Capital card
+        matchDeck.push({
+          id: item.id,
+          type: 'capital',
+          label: currentLang === 'en' ? item.capitalEn : item.capitalAm,
+          icon: '🏛️',
+          matched: false
+        });
+      });
+
+      // Shuffle deck
+      matchDeck.sort(() => 0.5 - Math.random());
+      renderMatchBoard(container);
+    }
+
+    function renderMatchBoard(container) {
+      container.innerHTML = `
+        <div class="w-full max-w-2xl flex flex-col items-center">
+          
+          <div class="w-full flex items-center justify-between text-xs font-bold text-slate-300 mb-3 px-2">
+            <span>${i18n[currentLang].matchPairsRemaining} <strong id="matchRemainingCount" class="text-amber-400 font-mono text-sm">${6 - matchMatchedCount}</strong></span>
+            <button onclick="initMatchGame(document.getElementById('gameArena'))" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-600 transition">
+              ${i18n[currentLang].restartMatch}
+            </button>
+          </div>
+
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full" id="matchCardsGrid">
+            ${matchDeck.map((card, idx) => `
+              <button onclick="handleMatchCardClick(${idx})" id="mcard_${idx}" class="touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all duration-200 active:scale-95 shadow-md ${
+                card.matched 
+                  ? 'bg-emerald-900/50 border-emerald-500 text-emerald-200 opacity-60 pointer-events-none' 
+                  : 'bg-slate-800/90 hover:bg-slate-700 border-slate-600 text-white'
+              }">
+                <span class="text-xl sm:text-2xl mb-1">${card.icon}</span>
+                <span class="text-xs sm:text-sm font-bold leading-tight">${card.label}</span>
+              </button>
+            `).join('')}
+          </div>
+
+          <div id="matchVictoryBanner" class="hidden mt-6 p-4 bg-emerald-950 border-2 border-emerald-500 rounded-2xl text-center">
+            <div class="text-3xl mb-1">🏆</div>
+            <div class="text-lg font-black text-emerald-300">Outstanding! All Pairs Matched!</div>
+            <p class="text-xs text-emerald-400 mt-1">You scored +50 bonus points!</p>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function handleMatchCardClick(idx) {
+      const card = matchDeck[idx];
+      if (card.matched || matchSelected.includes(idx) || matchSelected.length >= 2) return;
+
+      playTone('flip');
+      matchSelected.push(idx);
+
+      // Highlight selected
+      const el = document.getElementById(`mcard_${idx}`);
+      el.classList.remove('bg-slate-800/90', 'border-slate-600');
+      el.classList.add('bg-amber-600', 'border-amber-300', 'scale-105');
+
+      if (matchSelected.length === 2) {
+        const [firstIdx, secondIdx] = matchSelected;
+        const c1 = matchDeck[firstIdx];
+        const c2 = matchDeck[secondIdx];
+
+        if (c1.id === c2.id && c1.type !== c2.type) {
+          // MATCH!
+          c1.matched = true;
+          c2.matched = true;
+          matchMatchedCount++;
+          score += 15;
+          streak += 1;
+          playTone('correct');
+
+          setTimeout(() => {
+            const el1 = document.getElementById(`mcard_${firstIdx}`);
+            const el2 = document.getElementById(`mcard_${secondIdx}`);
+            el1.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-emerald-900/50 border-emerald-500 text-emerald-200 opacity-60 pointer-events-none";
+            el2.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-emerald-900/50 border-emerald-500 text-emerald-200 opacity-60 pointer-events-none";
+            
+            document.getElementById('matchRemainingCount').textContent = 6 - matchMatchedCount;
+            document.getElementById('scoreVal').textContent = score;
+            document.getElementById('streakVal').textContent = streak;
+
+            matchSelected = [];
+
+            if (matchMatchedCount === 6) {
+              score += 50;
+              document.getElementById('scoreVal').textContent = score;
+              playTone('win');
+              confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+              document.getElementById('matchVictoryBanner').classList.remove('hidden');
+            }
+          }, 400);
+
+        } else {
+          // NO MATCH
+          streak = 0;
+          playTone('wrong');
+          document.getElementById('streakVal').textContent = streak;
+
+          setTimeout(() => {
+            const el1 = document.getElementById(`mcard_${firstIdx}`);
+            const el2 = document.getElementById(`mcard_${secondIdx}`);
+            if (el1) {
+              el1.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-slate-800/90 hover:bg-slate-700 border-slate-600 text-white";
+            }
+            if (el2) {
+              el2.className = "touch-target h-24 sm:h-28 p-2 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all bg-slate-800/90 hover:bg-slate-700 border-slate-600 text-white";
+            }
+            matchSelected = [];
+          }, 800);
+        }
+      }
+    }
+
+    // ==========================================
+    // 4. MAP DIRECTORY / REFERENCE GRID
+    // ==========================================
+    function renderGrid(container) {
+      container.innerHTML = `
+        <div class="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          ${canadaData.map((d, i) => {
+            const name = currentLang === 'en' ? d.nameEn : d.nameAm;
+            const cap = currentLang === 'en' ? d.capitalEn : d.capitalAm;
+            const fact = currentLang === 'en' ? d.factEn : d.factAm;
+            return `
+              <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between shadow-md hover:border-slate-500 transition">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-2xl">${d.icon}</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                      ${d.type === 'province' ? 'Province' : 'Territory'}
+                    </span>
+                  </div>
+                  <h3 class="text-lg font-black text-white">${name}</h3>
+                  <div class="mt-2 flex items-center gap-1.5 text-amber-400 font-extrabold text-sm">
+                    <span>🏛️ Capital:</span> <span>${cap}</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                    ${fact}
+                  </p>
+                </div>
+                <button onclick="cardIndex = ${i}; switchGameMode('flashcard');" class="mt-4 w-full py-1.5 bg-slate-800 hover:bg-red-600 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition">
+                  Practice in Flashcard ➔
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    // Keyboard shortcut F
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') toggleFullScreen();
+      if (currentMode === 'flashcard') {
+        if (e.key === 'ArrowRight' || e.key === ' ') nextCard();
+        if (e.key === 'ArrowLeft') prevCard();
+        if (e.key === 'Enter') flipCard();
+      }
+    });
+
+    // Initial render
+    renderCurrentMode();
+  </script>
+</body>
+</html>

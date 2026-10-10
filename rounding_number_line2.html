@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rounding Studio: Number Line & Midpoint Lab</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --accent: #f59e0b;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-light: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #475569;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 16px; }
+
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 24px;
+      max-width: 960px;
+      margin: 0 auto 20px auto;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    h2 { color: #38bdf8; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+    /* CONTROLS BAR */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      background: #0b1120;
+      padding: 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    label { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    input[type="number"], select {
+      width: 100%;
+      background: var(--surface);
+      color: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    input[type="number"]:focus, select:focus {
+      outline: none;
+      border-color: #38bdf8;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-rand { background: var(--accent); color: #0f172a; }
+    .btn-rand:hover { background: #d97706; }
+
+    /* INTERACTIVE NUMBER LINE STAGE */
+    .line-stage {
+      background: #0b1120;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      padding: 40px 20px 30px 20px;
+      position: relative;
+      margin-top: 15px;
+    }
+
+    svg.number-line-svg {
+      width: 100%;
+      height: 180px;
+      display: block;
+      overflow: visible;
+    }
+
+    /* Roller Coaster Analogy Card */
+    .coaster-box {
+      background: #1e1b4b;
+      border: 1px solid #4338ca;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .coaster-icon { font-size: 2.2rem; }
+
+    /* SUMMARY BANNER */
+    .verdict-banner {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #0284c7;
+      color: white;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    /* PRACTICE CHALLENGE SECTION */
+    .challenge-box {
+      background: #0b1120;
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>📏 Open Number Line Rounding Studio (Grade 4 • B1.3)</h2>
+    <p style="color: #cbd5e1; margin-top: 0;">
+      Visualizing <strong>friendly benchmarks</strong> and the <strong>exact midpoint</strong> to find the closest round number.
+    </p>
+
+    <!-- INTERACTIVE INPUTS -->
+    <div class="controls-grid">
+      <div>
+        <label>Your Number (Up to 10,000):</label>
+        <input type="number" id="userNum" value="638" min="0" max="10000" oninput="updateLine()">
+      </div>
+
+      <div>
+        <label>Round To Nearest:</label>
+        <select id="roundTarget" onchange="updateLine()">
+          <option value="10">Ten (10)</option>
+          <option value="100" selected>Hundred (100)</option>
+          <option value="1000">Thousand (1,000)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; align-items: flex-end; gap: 8px;">
+        <button class="btn btn-rand" style="width: 100%;" onclick="randomizeNumber()">🎲 Random Number</button>
+      </div>
+    </div>
+
+    <!-- NUMBER LINE VISUALIZER -->
+    <div class="line-stage">
+      <svg class="number-line-svg" viewBox="0 0 800 180" id="lineSvg">
+        <!-- Main horizontal line with arrows -->
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8"/>
+          </marker>
+        </defs>
+
+        <line x1="50" y1="100" x2="750" y2="100" stroke="#94a3b8" stroke-width="4" marker-start="url(#arrow)" marker-end="url(#arrow)" />
+
+        <!-- 3 Benchmark Tick Marks -->
+        <!-- Lower Benchmark (Tick 1) -->
+        <line x1="100" y1="70" x2="100" y2="130" stroke="#38bdf8" stroke-width="4" />
+        <circle cx="100" cy="100" r="7" fill="#38bdf8" />
+        <text x="100" y="155" fill="#38bdf8" font-size="16" font-weight="800" text-anchor="middle" id="txtLower">600</text>
+        <text x="100" y="55" fill="#94a3b8" font-size="12" font-weight="700" text-anchor="middle">LOWER BENCHMARK</text>
+
+        <!-- Midpoint (Tick 2) -->
+        <line x1="400" y1="75" x2="400" y2="125" stroke="#f59e0b" stroke-width="3" stroke-dasharray="6,4" />
+        <circle cx="400" cy="100" r="6" fill="#f59e0b" />
+        <text x="400" y="155" fill="#f59e0b" font-size="16" font-weight="800" text-anchor="middle" id="txtMid">650</text>
+        <text x="400" y="55" fill="#f59e0b" font-size="12" font-weight="700" text-anchor="middle">MIDPOINT (HALFWAY)</text>
+
+        <!-- Upper Benchmark (Tick 3) -->
+        <line x1="700" y1="70" x2="700" y2="130" stroke="#38bdf8" stroke-width="4" />
+        <circle cx="700" cy="100" r="7" fill="#38bdf8" />
+        <text x="700" y="155" fill="#38bdf8" font-size="16" font-weight="800" text-anchor="middle" id="txtUpper">700</text>
+        <text x="700" y="55" fill="#94a3b8" font-size="12" font-weight="700" text-anchor="middle">UPPER BENCHMARK</text>
+
+        <!-- The Target Number Pointer -->
+        <g id="pointerGroup" transform="translate(400, 0)">
+          <!-- Pointer pin -->
+          <polygon points="-8,75 8,75 0,95" fill="#ef4444" />
+          <circle cx="0" cy="65" r="16" fill="#ef4444" />
+          <text x="0" y="70" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle" id="txtPointerVal">638</text>
+          <!-- Distance arc indicator -->
+          <line x1="0" y1="95" x2="0" y2="105" stroke="#ef4444" stroke-width="3" />
+        </g>
+      </svg>
+    </div>
+
+    <!-- VERDICT -->
+    <div class="verdict-banner" id="verdictText">
+      638 rounded to the nearest hundred is 600!
+    </div>
+
+    <!-- ROLLER COASTER EXPLANATION -->
+    <div class="coaster-box">
+      <div class="coaster-icon">🎢</div>
+      <div>
+        <strong style="color: #a5b4fc; font-size: 1.05rem;">The Roller Coaster Rule (Why 5 Rounds Up!):</strong>
+        <p style="margin: 4px 0 0 0; color: #cbd5e1; font-size: 0.95rem;" id="ruleExplanation">
+          If your car stops on 1, 2, 3, or 4, it rolls backward to the lower number. Once you reach the peak at <strong>5</strong> (the middle), gravity carries you forward to the top!
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMBEDDED PRACTICE CHALLENGE -->
+  <div class="card">
+    <h2>🎯 Self-Check Practice Challenge</h2>
+    <div class="challenge-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span id="challengePrompt" style="font-size: 1.2rem; font-weight: 800; color: #f8fafc;">
+          Round 4,720 to the nearest THOUSAND:
+        </span>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="userGuess" placeholder="Your answer..." style="width: 140px;">
+          <button class="btn" onclick="checkGuess()">Check</button>
+        </div>
+      </div>
+      <div id="challengeFeedback" style="font-weight: bold; margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <script>
+    function updateLine() {
+      let num = parseInt(document.getElementById("userNum").value, 10);
+      if (isNaN(num)) num = 0;
+      if (num < 0) num = 0;
+      if (num > 10000) num = 10000;
+
+      const target = parseInt(document.getElementById("roundTarget").value, 10);
+
+      // Calculate lower, mid, and upper benchmarks
+      const lower = Math.floor(num / target) * target;
+      const upper = lower + target;
+      const mid = lower + (target / 2);
+
+      // Display labels
+      document.getElementById("txtLower").textContent = lower.toLocaleString();
+      document.getElementById("txtMid").textContent = mid.toLocaleString();
+      document.getElementById("txtUpper").textContent = upper.toLocaleString();
+      document.getElementById("txtPointerVal").textContent = num.toLocaleString();
+
+      // Position the pointer on the line (x: 100 to 700 = 600px range)
+      const fraction = (num - lower) / target;
+      const posX = 100 + (fraction * 600);
+
+      document.getElementById("pointerGroup").setAttribute("transform", `translate(${posX}, 0)`);
+
+      // Determine result
+      let rounded = (num >= mid) ? upper : lower;
+      const isUp = (num >= mid);
+
+      const targetWord = (target === 10) ? "ten" : (target === 100) ? "hundred" : "thousand";
+      const verdictEl = document.getElementById("verdictText");
+
+      verdictEl.textContent = `${num.toLocaleString()} rounded to the nearest ${targetWord} is ${rounded.toLocaleString()}!`;
+      verdictEl.style.background = isUp ? "#16a34a" : "#0284c7";
+
+      // Explanation
+      const expEl = document.getElementById("ruleExplanation");
+      if (num === mid) {
+        expEl.innerHTML = `<strong>${num} is exactly on the midpoint (${mid})!</strong> In math, the rule is to always push forward and <strong>round UP</strong> to ${upper}!`;
+      } else if (isUp) {
+        expEl.innerHTML = `<strong>${num} is past the midpoint (${mid})!</strong> It has crossed halfway, so it is closer to the upper number: <strong>${upper}</strong>.`;
+      } else {
+        expEl.innerHTML = `<strong>${num} has not reached the midpoint (${mid}) yet.</strong> It is on the left side, so it is closer to the lower number: <strong>${lower}</strong>.`;
+      }
+    }
+
+    function randomizeNumber() {
+      const target = parseInt(document.getElementById("roundTarget").value, 10);
+      let rand = 0;
+      if (target === 10) rand = Math.floor(Math.random() * 90) + 10;
+      else if (target === 100) rand = Math.floor(Math.random() * 900) + 100;
+      else rand = Math.floor(Math.random() * 9000) + 1000;
+
+      document.getElementById("userNum").value = rand;
+      updateLine();
+    }
+
+    // Practice Challenge generator
+    let activeChallenge = { num: 4720, target: 1000, correct: 5000 };
+
+    function nextChallenge() {
+      const targets = [10, 100, 1000];
+      const t = targets[Math.floor(Math.random() * targets.length)];
+      let num = 0;
+      if (t === 10) num = Math.floor(Math.random() * 90) + 10;
+      else if (t === 100) num = Math.floor(Math.random() * 900) + 100;
+      else num = Math.floor(Math.random() * 9000) + 1000;
+
+      const lower = Math.floor(num / t) * t;
+      const upper = lower + t;
+      const mid = lower + (t / 2);
+      const correct = (num >= mid) ? upper : lower;
+
+      activeChallenge = { num, target: t, correct };
+      const tWord = (t === 10) ? "TEN" : (t === 100) ? "HUNDRED" : "THOUSAND";
+      document.getElementById("challengePrompt").textContent = `Round ${num.toLocaleString()} to the nearest ${tWord}:`;
+      document.getElementById("userGuess").value = "";
+      document.getElementById("challengeFeedback").textContent = "";
+    }
+
+    function checkGuess() {
+      const guess = parseInt(document.getElementById("userGuess").value, 10);
+      const fb = document.getElementById("challengeFeedback");
+      if (guess === activeChallenge.correct) {
+        fb.textContent = `🌟 Correct! ${activeChallenge.num} is closer to ${activeChallenge.correct}.`;
+        fb.style.color = "var(--success)";
+        setTimeout(nextChallenge, 1800);
+      } else {
+        fb.textContent = `❌ Try again! Look at where ${activeChallenge.num} sits compared to the midpoint.`;
+        fb.style.color = "var(--danger)";
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      updateLine();
+    });
+  </script>
+</body>
+</html>

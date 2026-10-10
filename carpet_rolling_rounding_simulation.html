@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Rounding as Carpet Rolling | የምንጣፍ ጥቅልል ማጠጋጋት</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for audio rolling sounds and celebratory chimes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  
+  <!-- Google Fonts: Fredoka, Patrick Hand, and Noto Sans Ethiopic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700;800&family=Patrick+Hand&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Fredoka', 'Noto Sans Ethiopic', sans-serif;
+      touch-action: manipulation;
+    }
+    .font-num {
+      font-family: 'Nunito', sans-serif;
+    }
+    .font-hand {
+      font-family: 'Patrick Hand', 'Noto Sans Ethiopic', cursive;
+    }
+    /* Floorboard wooden room background */
+    .room-floor {
+      background: #fdfaf6;
+      background-image: 
+        linear-gradient(90deg, rgba(226, 232, 240, 0.4) 1px, transparent 1px),
+        linear-gradient(rgba(241, 245, 249, 0.6) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    /* Touch target */
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    /* Subtle pulse animation for the winner benchmark */
+    @keyframes winnerPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+      50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    }
+    .winner-glow {
+      animation: winnerPulse 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center select-none overflow-x-hidden p-2 sm:p-4 pb-12">
+
+  <header class="w-full max-w-5xl bg-slate-800/90 backdrop-blur-md rounded-2xl border border-slate-700/80 p-3 sm:p-4 mb-3 shadow-xl flex flex-wrap items-center justify-between gap-2.5">
+    
+    <!-- Branding -->
+    <div class="flex items-center space-x-2.5 sm:space-x-3">
+      <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-tr from-rose-600 via-amber-500 to-amber-400 rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg shadow-rose-500/20 flex-shrink-0">
+        🧶
+      </div>
+      <div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <h1 id="appTitle" class="text-base sm:text-lg md:text-xl font-bold text-white tracking-tight leading-tight">
+            Rounding as Carpet Rolling
+          </h1>
+          <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            Physical Intuition
+          </span>
+        </div>
+        <p id="appSubtitle" class="text-[11px] sm:text-xs text-slate-400 font-medium">
+          Would it take less effort to roll it back or roll it all the way forward?
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Action Controls -->
+    <div class="flex items-center space-x-1.5 sm:space-x-2">
+      <!-- Bilingual Toggle -->
+      <button id="btnLang" onclick="toggleLanguage()" class="touch-target px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center gap-1">
+        <span>🌐</span>
+        <span id="txtLang">አማርኛ</span>
+      </button>
+
+      <!-- Fullscreen Toggle (F) -->
+      <button id="btnFs" onclick="toggleFullScreen()" class="touch-target px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 font-bold text-xs sm:text-sm transition active:scale-95" title="Toggle Fullscreen (F)">
+        <span id="fsIcon">⛶</span>
+        <span id="fsText" class="hidden sm:inline">Full</span>
+      </button>
+
+      <!-- Audio Mute -->
+      <button id="btnAudio" onclick="toggleAudio()" class="touch-target p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 text-sm transition active:scale-95" title="Sound">
+        <span id="audioIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="w-full max-w-5xl bg-slate-800/60 rounded-2xl border border-slate-700/80 p-3 mb-3 flex flex-col gap-2.5 shadow-md">
+    
+    <!-- Top Row: Rounding Target Scale Selector -->
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-700 text-xs font-bold w-full sm:w-auto">
+        <button onclick="setRoundingPlace(10)" id="tab_place10" class="flex-1 sm:flex-initial touch-target px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
+          Nearest 10 (ወደ 10)
+        </button>
+        <button onclick="setRoundingPlace(100)" id="tab_place100" class="flex-1 sm:flex-initial touch-target px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
+          Nearest 100 (ወደ 100)
+        </button>
+        <button onclick="setRoundingPlace(1000)" id="tab_place1000" class="flex-1 sm:flex-initial touch-target px-3 py-1.5 rounded-lg transition bg-rose-600 text-white shadow-sm font-black">
+          Nearest 1000 (ወደ 1,000)
+        </button>
+      </div>
+
+      <!-- Roll Now Button -->
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <button id="btnRollNow" onclick="animateRollToNearest()" class="touch-target flex-1 sm:flex-initial px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-1.5">
+          <span class="text-base">🚀</span>
+          <span id="txtRollNow">Roll to Nearest!</span>
+        </button>
+        <button onclick="generateRandomNumber()" class="touch-target px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded-xl text-xs font-bold transition active:scale-95" title="Random Number">
+          🎲
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Row: Presets from Quiz Sheet + Custom Number Input -->
+    <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-1 border-t border-slate-700/60">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="text-slate-400 font-bold uppercase tracking-wider text-[11px]" id="lblPresets">Quiz Presets:</span>
+        <button onclick="setCustomValue(7642, 1000)" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold border border-slate-600 transition active:scale-95">
+          7,642 (Page 2)
+        </button>
+        <button onclick="setCustomValue(1922, 1000)" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-rose-300 font-bold border border-slate-600 transition active:scale-95">
+          1,922 (Quiz Trap!)
+        </button>
+        <button onclick="setCustomValue(958, 1000)" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold border border-slate-600 transition active:scale-95">
+          958
+        </button>
+        <button onclick="setCustomValue(4268, 1000)" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold border border-slate-600 transition active:scale-95">
+          4,268
+        </button>
+        <button onclick="setCustomValue(350, 100)" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-emerald-300 font-bold border border-slate-600 transition active:scale-95">
+          350 (Exact Midpoint)
+        </button>
+      </div>
+
+      <!-- Manual Input -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-slate-400 font-medium" id="lblCustom">Test Any:</span>
+        <input type="number" id="customInput" min="0" max="99999" value="7642" class="w-20 px-2 py-1 bg-slate-900 border border-slate-600 rounded-lg text-white font-num font-bold text-center text-xs">
+        <button onclick="applyCustomInput()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition active:scale-95">
+          Go
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+    
+    <!-- Option A: Roll Back (Round Down) -->
+    <div id="cardRollBack" class="p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between relative bg-slate-800/80 border-slate-700">
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <span>⏪</span> <span id="lblOptionA">Option A: Roll Back (Round Down)</span>
+          </span>
+          <span id="badgeA" class="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
+            More Effort
+          </span>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <div class="text-2xl sm:text-3xl font-black font-num text-slate-100" id="valBenchmarkLower">
+            7,000
+          </div>
+          <div class="text-xs sm:text-sm font-semibold text-slate-300">
+            <span id="lblDistA">Distance to roll:</span>
+            <strong class="text-base sm:text-lg font-bold text-amber-400 ml-1" id="distValLower">642</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Effort Energy Bar -->
+      <div class="mt-3">
+        <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-1">
+          <span id="lblEffortA">Effort Needed:</span>
+          <span id="pctEffortA" class="font-mono text-amber-400">64.2%</span>
+        </div>
+        <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700">
+          <div id="barEffortA" class="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-300" style="width: 64.2%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option B: Roll Forward (Round Up) -->
+    <div id="cardRollForward" class="p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between relative bg-slate-800/80 border-slate-700">
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <span>⏩</span> <span id="lblOptionB">Option B: Roll Forward (Round Up)</span>
+          </span>
+          <span id="badgeB" class="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            WINNER! Less Effort 🏆
+          </span>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <div class="text-2xl sm:text-3xl font-black font-num text-slate-100" id="valBenchmarkUpper">
+            8,000
+          </div>
+          <div class="text-xs sm:text-sm font-semibold text-slate-300">
+            <span id="lblDistB">Distance to roll:</span>
+            <strong class="text-base sm:text-lg font-bold text-emerald-400 ml-1" id="distValUpper">358</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Effort Energy Bar -->
+      <div class="mt-3">
+        <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-1">
+          <span id="lblEffortB">Effort Needed:</span>
+          <span id="pctEffortB" class="font-mono text-emerald-400">35.8%</span>
+        </div>
+        <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700">
+          <div id="barEffortB" class="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full transition-all duration-300" style="width: 35.8%;"></div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <main class="w-full max-w-5xl bg-white text-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-700 relative overflow-hidden flex flex-col items-center">
+    
+    <!-- Top Result Banner -->
+    <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-3">
+      <div>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider" id="lblTargetScale">
+          Rounding to the nearest 1,000
+        </span>
+        <div class="flex items-center gap-2 mt-0.5">
+          <span class="text-slate-500 text-xs font-bold uppercase" id="lblCurrentPosition">Carpet Rolled To:</span>
+          <span class="text-3xl sm:text-4xl font-black font-num text-slate-900 tracking-tight" id="dispCurrentNumber">
+            7,642
+          </span>
+        </div>
+      </div>
+
+      <!-- Rounded Result Badge -->
+      <div class="flex items-center gap-3 bg-emerald-50 border-2 border-emerald-400 px-4 py-2 rounded-2xl shadow-sm">
+        <span class="text-2xl sm:text-3xl">🎯</span>
+        <div>
+          <div class="text-[10px] uppercase font-bold text-emerald-700" id="lblRoundsTo">
+            EASIEST CHOICE (ROUNDS TO):
+          </div>
+          <div class="text-2xl sm:text-3xl font-black text-emerald-900 font-num leading-none" id="dispRoundedWinner">
+            8,000
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The Physics Simulation Canvas -->
+    <div class="w-full relative flex flex-col items-center my-2">
+      <div class="w-full relative h-[210px] sm:h-[240px] rounded-2xl room-floor border border-slate-200 overflow-hidden shadow-inner flex items-center justify-center">
+        <canvas id="carpetCanvas" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+      </div>
+      
+      <!-- Drag Instruction Callout -->
+      <div class="flex items-center justify-between w-full px-2 pt-2 text-[11px] sm:text-xs text-slate-500 font-semibold">
+        <span class="flex items-center gap-1">
+          <span>👈</span> <span id="hintDrag">Drag the carpet roll with your finger or mouse</span> <span>👉</span>
+        </span>
+        <span class="hidden sm:inline font-mono text-slate-400" id="hintShortcut">
+          Press [F] Fullscreen | [Space] Roll
+        </span>
+      </div>
+    </div>
+
+    <!-- Continuous Range Slider -->
+    <div class="w-full max-w-2xl px-2 mt-3 flex flex-col items-center">
+      <input type="range" id="scrubberSlider" min="7000" max="8000" value="7642" class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600 touch-target">
+      <div class="w-full flex justify-between text-[11px] font-bold text-slate-400 mt-1">
+        <span id="sliderMinLabel">7,000</span>
+        <span class="text-amber-600 font-extrabold flex items-center gap-1">
+          <span>🚩</span> <span id="sliderMidLabel">Midpoint: 7,500</span>
+        </span>
+        <span id="sliderMaxLabel">8,000</span>
+      </div>
+    </div>
+
+    <!-- Pedagogical Intuition / Story Card -->
+    <div id="storyCard" class="w-full mt-4 p-3.5 sm:p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-xs sm:text-sm font-semibold flex items-start gap-3">
+      <span class="text-2xl flex-shrink-0 mt-0.5">🧠</span>
+      <div class="space-y-1">
+        <div class="font-bold text-amber-900" id="storyTitle">The Physical Intuition Behind Rounding:</div>
+        <p id="storyDescription" class="leading-relaxed text-amber-900/90">
+          The carpet is currently at <strong>7,642</strong>. Rolling it back to <strong>7,000</strong> would take <strong>642 units of work</strong>. But rolling it forward to <strong>8,000</strong> only takes <strong>358 units of work</strong>! Rolling forward is much easier, so <strong>7,642 rounds UP to 8,000</strong>.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // State variables
+    let currentNumber = 7642;
+    let roundingPlace = 1000; // 10, 100, 1000
+    let currentLang = 'en'; // 'en' | 'am'
+    let isRollingAnimation = false;
+    let rollTargetValue = 8000;
+    let soundEnabled = true;
+    let synth = null;
+
+    // Canvas references
+    const canvas = document.getElementById('carpetCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Bilingual text dictionary
+    const translations = {
+      en: {
+        appTitle: "Rounding as Carpet Rolling",
+        appSubtitle: "Would it take less effort to roll it back or roll it all the way forward?",
+        langBtn: "አማርኛ",
+        fsText: "Full",
+        fsExit: "Exit",
+        rollNow: "Roll to Nearest!",
+        rolling: "Rolling...",
+        presets: "Quiz Presets:",
+        custom: "Test Any:",
+        optA: "Option A: Roll Back (Round Down)",
+        optB: "Option B: Roll Forward (Round Up)",
+        moreEffort: "More Effort ⚠️",
+        lessEffort: "WINNER! Less Effort 🏆",
+        distToRoll: "Distance to roll:",
+        effortNeeded: "Effort Needed:",
+        placeTitle: {
+          10: "Rounding to the nearest 10",
+          100: "Rounding to the nearest 100",
+          1000: "Rounding to the nearest 1,000"
+        },
+        carpetRolledTo: "Carpet Rolled To:",
+        roundsTo: "EASIEST CHOICE (ROUNDS TO):",
+        dragHint: "Drag the carpet roll with your finger or mouse",
+        shortcutHint: "Press [F] Fullscreen | [Space] Roll",
+        storyTitle: "The Physical Intuition Behind Rounding:",
+        storyUp: (num, lower, upper, distLow, distUp, mid) => 
+          `The carpet is currently at <strong>${num.toLocaleString()}</strong>. Rolling it back to <strong>${lower.toLocaleString()}</strong> takes <strong>${distLow.toLocaleString()} units of work</strong>. Rolling it forward to <strong>${upper.toLocaleString()}</strong> only takes <strong>${distUp.toLocaleString()} units of work</strong>! Rolling forward is easier, so <strong>${num.toLocaleString()} rounds UP to ${upper.toLocaleString()}</strong>.`,
+        storyDown: (num, lower, upper, distLow, distUp, mid) => 
+          `The carpet is currently at <strong>${num.toLocaleString()}</strong>. Rolling it back to <strong>${lower.toLocaleString()}</strong> takes only <strong>${distLow.toLocaleString()} units of work</strong>! Rolling it all the way forward to <strong>${upper.toLocaleString()}</strong> takes <strong>${distUp.toLocaleString()} units of work</strong>. Rolling back is much easier, so <strong>${num.toLocaleString()} rounds DOWN to ${lower.toLocaleString()}</strong>.`,
+        storyMid: (num, lower, upper, mid) => 
+          `The carpet is at the exact midpoint <strong>${num.toLocaleString()}</strong>! The distance both ways is identical. By mathematical rule (and wind momentum), we always <strong>roll FORWARD (round UP to ${upper.toLocaleString()})</strong>!`
+      },
+      am: {
+        appTitle: "የምንጣፍ ጥቅልል ማጠጋጋት",
+        appSubtitle: "ምንጣፉን ወደ ኋላ መጠቅለል ይቀላል ወይስ ወደ ፊት መዘርጋት?",
+        langBtn: "English",
+        fsText: "ሙሉ",
+        fsExit: "ቀንስ",
+        rollNow: "ወደ ቅርቡ ጠቅልል!",
+        rolling: "እየተጠቀለለ ነው...",
+        presets: "የፈተናው ምሳሌዎች፡",
+        custom: "የራስህ ቁጥር፡",
+        optA: "አማራጭ 1፡ ወደ ኋላ መጠቅለል (ወደ ታች ማጠጋጋት)",
+        optB: "አማራጭ 2፡ ወደ ፊት መዘርጋት (ወደ ላይ ማጠጋጋት)",
+        moreEffort: "ብዙ ድካም ይጠይቃል ⚠️",
+        lessEffort: "ቀላሉ አማራጭ! አነስተኛ ድካም 🏆",
+        distToRoll: "የሚቀረው ርቀት፡",
+        effortNeeded: "የሚጠይቀው ጉልበት፡",
+        placeTitle: {
+          10: "ወደ ቅርብ 10 ማጠጋጋት",
+          100: "ወደ ቅርብ 100 ማጠጋጋት",
+          1000: "ወደ ቅርብ 1,000 ማጠጋጋት"
+        },
+        carpetRolledTo: "ምንጣፉ የደረሰበት ቁጥር፡",
+        roundsTo: "ቀላሉ አማራጭ (የተጠጋጋው ውጤት)፡",
+        dragHint: "ምንጣፉን በጣትዎ ወይም በመዳፊት ይጎትቱት",
+        shortcutHint: "የቁልፍ ሰሌዳ፡ [F] ሙሉ ማያ | [Space] አጠጋጋ",
+        storyTitle: "የማጠጋጋት አካላዊ ትርጉም፡",
+        storyUp: (num, lower, upper, distLow, distUp, mid) => 
+          `ምንጣፉ በአሁኑ ሰዓት <strong>${num.toLocaleString()}</strong> ላይ ይገኛል። ወደ ኋላ ወደ <strong>${lower.toLocaleString()}</strong> ለመመለስ <strong>${distLow.toLocaleString()} ሜትር ጉልበት</strong> ይፈልጋል። ወደ ፊት ወደ <strong>${upper.toLocaleString()}</strong> ለመዘርጋት ግን <strong>${distUp.toLocaleString()} ሜትር ብቻ</strong> ነው የሚቀረው! ወደ ፊት መዘርጋት ስለሚቀል <strong>${num.toLocaleString()} ወደ ${upper.toLocaleString()} ይጠጋጋል</strong>።`,
+        storyDown: (num, lower, upper, distLow, distUp, mid) => 
+          `ምንጣፉ በአሁኑ ሰዓት <strong>${num.toLocaleString()}</strong> ላይ ይገኛል። ወደ ኋላ ወደ <strong>${lower.toLocaleString()}</strong> ለመመለስ <strong>${distLow.toLocaleString()} ሜትር ብቻ</strong> ስለሚቀረው ወደ ኋላ መጠቅለል በጣም ይቀላል! ስለዚህ <strong>${num.toLocaleString()} ወደ ${lower.toLocaleString()} ይጠጋጋል</strong>።`,
+        storyMid: (num, lower, upper, mid) => 
+          `ምንጣፉ ልክ መካከለኛው <strong>${num.toLocaleString()}</strong> ላይ አርፏል! የሁለቱም አቅጣጫ ርቀት እኩል ነው። በሂሳብ ህግ (እና በምንጣፉ ፍጥነት) ሁልጊዜም <strong>ወደ ፊት እንዘረጋለን (ወደ ${upper.toLocaleString()} ይጠጋጋል)</strong>!`
+      }
+    };
+
+    // Audio SFX with Tone.js
+    function playAudioTone(type = 'roll') {
+      if (!soundEnabled) return;
+      try {
+        if (!synth && window.Tone) {
+          synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          synth.volume.value = -12;
+        }
+        if (Tone.context.state !== 'running') Tone.start();
+        if (type === 'tick') {
+          synth.triggerAttackRelease("G4", "64n");
+        } else if (type === 'roll') {
+          synth.triggerAttackRelease(["C4", "E4", "G4"], "16n");
+        } else if (type === 'win') {
+          synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n");
+        }
+      } catch (err) {}
+    }
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('audioIcon').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+
+    // Full Screen Toggle
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFs = !!document.fullscreenElement;
+      document.getElementById('fsIcon').textContent = isFs ? '↙' : '⛶';
+      document.getElementById('fsText').textContent = isFs ? translations[currentLang].fsExit : translations[currentLang].fsText;
+      resizeCanvas();
+    });
+
+    // Language Toggle
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'am' : 'en';
+      document.getElementById('txtLang').textContent = translations[currentLang].langBtn;
+      document.getElementById('appTitle').textContent = translations[currentLang].appTitle;
+      document.getElementById('appSubtitle').textContent = translations[currentLang].appSubtitle;
+      document.getElementById('txtRollNow').textContent = translations[currentLang].rollNow;
+      document.getElementById('lblPresets').textContent = translations[currentLang].presets;
+      document.getElementById('lblCustom').textContent = translations[currentLang].custom;
+      document.getElementById('lblOptionA').textContent = translations[currentLang].optA;
+      document.getElementById('lblOptionB').textContent = translations[currentLang].optB;
+      document.getElementById('lblDistA').textContent = translations[currentLang].distToRoll;
+      document.getElementById('lblDistB').textContent = translations[currentLang].distToRoll;
+      document.getElementById('lblEffortA').textContent = translations[currentLang].effortNeeded;
+      document.getElementById('lblEffortB').textContent = translations[currentLang].effortNeeded;
+      document.getElementById('lblCurrentPosition').textContent = translations[currentLang].carpetRolledTo;
+      document.getElementById('lblRoundsTo').textContent = translations[currentLang].roundsTo;
+      document.getElementById('hintDrag').textContent = translations[currentLang].dragHint;
+      document.getElementById('hintShortcut').textContent = translations[currentLang].shortcutHint;
+      document.getElementById('storyTitle').textContent = translations[currentLang].storyTitle;
+      updateUI();
+    }
+
+    // Rounding calculations
+    function getRoundingBounds(num, step) {
+      const lower = Math.floor(num / step) * step;
+      const upper = lower + step;
+      const midpoint = lower + (step / 2);
+      const distLower = num - lower;
+      const distUpper = upper - num;
+      const roundsUp = num >= midpoint;
+      const winner = roundsUp ? upper : lower;
+      const pctToMid = Math.min(100, (distLower / (step / 2)) * 100);
+
+      const effortPctA = ((distLower / step) * 100).toFixed(1);
+      const effortPctB = ((distUpper / step) * 100).toFixed(1);
+
+      return { lower, upper, midpoint, distLower, distUpper, roundsUp, winner, effortPctA, effortPctB };
+    }
+
+    function setRoundingPlace(place) {
+      roundingPlace = place;
+      [10, 100, 1000].forEach(p => {
+        const btn = document.getElementById(`tab_place${p}`);
+        if (p === roundingPlace) {
+          btn.className = "flex-1 sm:flex-initial touch-target px-3 py-1.5 rounded-lg transition bg-rose-600 text-white shadow-sm font-black";
+        } else {
+          btn.className = "flex-1 sm:flex-initial touch-target px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+        }
+      });
+      updateUI();
+    }
+
+    function setCustomValue(val, place) {
+      currentNumber = val;
+      if (place) setRoundingPlace(place);
+      else updateUI();
+    }
+
+    function applyCustomInput() {
+      const val = parseInt(document.getElementById('customInput').value, 10);
+      if (!isNaN(val) && val >= 0) {
+        currentNumber = val;
+        updateUI();
+      }
+    }
+
+    function generateRandomNumber() {
+      const step = roundingPlace;
+      const base = Math.floor(Math.random() * 8) + 1;
+      const randOffset = Math.floor(Math.random() * step);
+      currentNumber = (base * step) + randOffset;
+      updateUI();
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      renderCarpetCanvas();
+    }
+
+    function renderCarpetCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const W = rect.width;
+      const H = rect.height;
+
+      ctx.clearRect(0, 0, W, H);
+
+      const bounds = getRoundingBounds(currentNumber, roundingPlace);
+      const padX = Math.max(30, W * 0.08);
+      const usableW = W - padX * 2;
+      const centerY = H * 0.58;
+
+      // Fractional progress of carpet along track [0, 1]
+      const frac = Math.max(0, Math.min(1, (currentNumber - bounds.lower) / roundingPlace));
+      const rollX = padX + frac * usableW;
+
+      // 1. Draw Wooden Floor Tape / Measurement Track
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(padX, centerY - 6, usableW, 12);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(padX, centerY - 6, usableW, 12);
+
+      // 2. Draw Measurement Ticks every 10%
+      for (let i = 0; i <= 10; i++) {
+        const tickX = padX + (i / 10) * usableW;
+        const isMid = i === 5;
+        ctx.beginPath();
+        ctx.strokeStyle = isMid ? '#f59e0b' : '#94a3b8';
+        ctx.lineWidth = isMid ? 3 : 1.5;
+        ctx.moveTo(tickX, centerY - (isMid ? 14 : 9));
+        ctx.lineTo(tickX, centerY + (isMid ? 14 : 9));
+        ctx.stroke();
+      }
+
+      // 3. Draw Unrolled Carpet (from Start / Lower benchmark to rollX)
+      const carpetH = Math.min(52, H * 0.28);
+      const carpetTop = centerY - carpetH / 2;
+
+      if (rollX > padX + 2) {
+        // Red Carpet Base
+        const carpetGrad = ctx.createLinearGradient(padX, carpetTop, rollX, carpetTop);
+        carpetGrad.addColorStop(0, '#991b1b');
+        carpetGrad.addColorStop(0.5, '#dc2626');
+        carpetGrad.addColorStop(1, '#ef4444');
+        ctx.fillStyle = carpetGrad;
+        ctx.fillRect(padX, carpetTop, rollX - padX, carpetH);
+
+        // Gold Trim Borders on Carpet Edges
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(padX, carpetTop, rollX - padX, 3.5);
+        ctx.fillRect(padX, carpetTop + carpetH - 3.5, rollX - padX, 3.5);
+
+        // Decorative Diamond Grid on Carpet
+        ctx.strokeStyle = 'rgba(254, 243, 199, 0.35)';
+        ctx.lineWidth = 1.2;
+        const patternStep = 18;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(padX, carpetTop, rollX - padX, carpetH);
+        ctx.clip();
+        for (let x = padX - carpetH; x < rollX + carpetH; x += patternStep) {
+          ctx.moveTo(x, carpetTop);
+          ctx.lineTo(x + carpetH, carpetTop + carpetH);
+          ctx.moveTo(x + carpetH, carpetTop);
+          ctx.lineTo(x, carpetTop + carpetH);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 4. Draw Midpoint (50%) Warning Flag / Milestone
+      const midX = padX + 0.5 * usableW;
+      ctx.save();
+      // Flag pole
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(midX, centerY - carpetH / 2 - 28);
+      ctx.lineTo(midX, centerY + carpetH / 2 + 8);
+      ctx.stroke();
+      // Flag pennant
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.moveTo(midX, centerY - carpetH / 2 - 28);
+      ctx.lineTo(midX + 22, centerY - carpetH / 2 - 20);
+      ctx.lineTo(midX, centerY - carpetH / 2 - 12);
+      ctx.closePath();
+      ctx.fill();
+      // Midpoint Label
+      ctx.fillStyle = '#b45309';
+      ctx.font = 'bold 11px Fredoka, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Halfway 50%`, midX, centerY - carpetH / 2 - 32);
+      ctx.restore();
+
+      // 5. Draw Real 3D Rolled Carpet Cylinder at rollX
+      const rollRadius = Math.min(22, carpetH * 0.44);
+      ctx.save();
+
+      // Shadow under the roll
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
+      ctx.beginPath();
+      ctx.ellipse(rollX, centerY + carpetH / 2 + 4, rollRadius * 0.9, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cylinder Body
+      const rollGrad = ctx.createLinearGradient(rollX - rollRadius, 0, rollX + rollRadius, 0);
+      rollGrad.addColorStop(0, '#7f1d1d');
+      rollGrad.addColorStop(0.35, '#ef4444');
+      rollGrad.addColorStop(0.7, '#f87171');
+      rollGrad.addColorStop(1, '#991b1b');
+      ctx.fillStyle = rollGrad;
+      ctx.beginPath();
+      ctx.roundRect(rollX - rollRadius, carpetTop - 4, rollRadius * 2, carpetH + 8, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#450a0a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Spiral roll lines on top & bottom caps
+      ctx.strokeStyle = 'rgba(254, 205, 211, 0.6)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(rollX, carpetTop - 2, rollRadius * 0.8, 3.5, 0, 0, Math.PI * 2);
+      ctx.ellipse(rollX, carpetTop + carpetH + 2, rollRadius * 0.8, 3.5, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 6. Draw Directional Distance Arrows (Roll Back vs Roll Forward)
+      // Arrow Back (Left)
+      if (rollX > padX + 24) {
+        ctx.fillStyle = bounds.roundsUp ? '#94a3b8' : '#22c55e';
+        ctx.strokeStyle = bounds.roundsUp ? '#94a3b8' : '#22c55e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(rollX - rollRadius - 4, centerY);
+        ctx.lineTo(padX + 10, centerY);
+        ctx.stroke();
+        // Arrow head pointing left
+        ctx.beginPath();
+        ctx.moveTo(padX + 8, centerY);
+        ctx.lineTo(padX + 18, centerY - 6);
+        ctx.lineTo(padX + 18, centerY + 6);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Arrow Forward (Right)
+      if (rollX < padX + usableW - 24) {
+        ctx.fillStyle = bounds.roundsUp ? '#22c55e' : '#94a3b8';
+        ctx.strokeStyle = bounds.roundsUp ? '#22c55e' : '#94a3b8';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(rollX + rollRadius + 4, centerY);
+        ctx.lineTo(padX + usableW - 10, centerY);
+        ctx.stroke();
+        // Arrow head pointing right
+        ctx.beginPath();
+        ctx.moveTo(padX + usableW - 8, centerY);
+        ctx.lineTo(padX + usableW - 18, centerY - 6);
+        ctx.lineTo(padX + usableW - 18, centerY + 6);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // 7. Benchmark Goal Post Markers at Ends
+      // Start Marker (Lower)
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(padX - 8, carpetTop - 12, 12, carpetH + 24, 4);
+      ctx.fill();
+      ctx.fillStyle = bounds.roundsUp ? '#64748b' : '#16a34a';
+      ctx.font = 'bold 13px Nunito, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(bounds.lower.toLocaleString(), padX, carpetTop + carpetH + 28);
+
+      // End Marker (Upper)
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(padX + usableW - 4, carpetTop - 12, 12, carpetH + 24, 4);
+      ctx.fill();
+      ctx.fillStyle = bounds.roundsUp ? '#16a34a' : '#64748b';
+      ctx.font = 'bold 13px Nunito, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(bounds.upper.toLocaleString(), padX + usableW, carpetTop + carpetH + 28);
+
+      // Pin Callout Label over the roll
+      const pinY = carpetTop - 24;
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(rollX - 38, pinY - 14, 76, 24, 8);
+      ctx.fill();
+      ctx.fillStyle = '#fde047';
+      ctx.font = '900 13px Nunito, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(currentNumber.toLocaleString(), rollX, pinY + 3);
+
+      ctx.restore();
+    }
+
+    function updateUI() {
+      const bounds = getRoundingBounds(currentNumber, roundingPlace);
+      const t = translations[currentLang];
+
+      // Sliders & Bound Labels
+      const slider = document.getElementById('scrubberSlider');
+      slider.min = bounds.lower;
+      slider.max = bounds.upper;
+      slider.value = currentNumber;
+
+      document.getElementById('sliderMinLabel').textContent = bounds.lower.toLocaleString();
+      document.getElementById('sliderMaxLabel').textContent = bounds.upper.toLocaleString();
+      document.getElementById('sliderMidLabel').textContent = `Midpoint: ${bounds.midpoint.toLocaleString()}`;
+
+      // Headers and badges
+      document.getElementById('lblTargetScale').textContent = t.placeTitle[roundingPlace];
+      document.getElementById('dispCurrentNumber').textContent = currentNumber.toLocaleString();
+      document.getElementById('dispRoundedWinner').textContent = bounds.winner.toLocaleString();
+      document.getElementById('customInput').value = currentNumber;
+
+      // Cards data
+      document.getElementById('valBenchmarkLower').textContent = bounds.lower.toLocaleString();
+      document.getElementById('distValLower').textContent = `${bounds.distLower.toLocaleString()} away`;
+      document.getElementById('pctEffortA').textContent = `${bounds.effortPctA}%`;
+      document.getElementById('barEffortA').style.width = `${bounds.effortPctA}%`;
+
+      document.getElementById('valBenchmarkUpper').textContent = bounds.upper.toLocaleString();
+      document.getElementById('distValUpper').textContent = `${bounds.distUpper.toLocaleString()} away`;
+      document.getElementById('pctEffortB').textContent = `${bounds.effortPctB}%`;
+      document.getElementById('barEffortB').style.width = `${bounds.effortPctB}%`;
+
+      // Highlight the Winning Option
+      const cardA = document.getElementById('cardRollBack');
+      const cardB = document.getElementById('cardRollForward');
+      const badgeA = document.getElementById('badgeA');
+      const badgeB = document.getElementById('badgeB');
+
+      if (bounds.roundsUp) {
+        // Option B (Roll Forward) is Winner
+        cardB.className = "p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between relative bg-emerald-950/40 border-emerald-500 shadow-lg winner-glow";
+        cardA.className = "p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between relative bg-slate-800/60 border-slate-700 opacity-70";
+        badgeB.className = "text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow";
+        badgeB.textContent = t.lessEffort;
+        badgeA.className = "text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400";
+        badgeA.textContent = t.moreEffort;
+      } else {
+        // Option A (Roll Back) is Winner
+        cardA.className = "p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between relative bg-emerald-950/40 border-emerald-500 shadow-lg winner-glow";
+        cardB.className = "p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between relative bg-slate-800/60 border-slate-700 opacity-70";
+        badgeA.className = "text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow";
+        badgeA.textContent = t.lessEffort;
+        badgeB.className = "text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400";
+        badgeB.textContent = t.moreEffort;
+      }
+
+      // Update Intuition Story
+      const storyDesc = document.getElementById('storyDescription');
+      if (currentNumber === bounds.midpoint) {
+        storyDesc.innerHTML = t.storyMid(currentNumber, bounds.lower, bounds.upper, bounds.midpoint);
+      } else if (bounds.roundsUp) {
+        storyDesc.innerHTML = t.storyUp(currentNumber, bounds.lower, bounds.upper, bounds.distLower, bounds.distUpper, bounds.midpoint);
+      } else {
+        storyDesc.innerHTML = t.storyDown(currentNumber, bounds.lower, bounds.upper, bounds.distLower, bounds.distUpper, bounds.midpoint);
+      }
+
+      renderCarpetCanvas();
+    }
+
+    let isDragging = false;
+
+    function handlePointerMove(clientX) {
+      if (isRollingAnimation) return;
+      const rect = canvas.getBoundingClientRect();
+      const padX = Math.max(30, rect.width * 0.08);
+      const usableW = rect.width - padX * 2;
+      const x = Math.max(padX, Math.min(padX + usableW, clientX - rect.left));
+      const frac = (x - padX) / usableW;
+
+      const bounds = getRoundingBounds(currentNumber, roundingPlace);
+      const newNum = Math.round(bounds.lower + frac * roundingPlace);
+      if (newNum !== currentNumber) {
+        currentNumber = newNum;
+        playAudioTone('tick');
+        updateUI();
+      }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      handlePointerMove(e.clientX);
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) handlePointerMove(e.clientX);
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        isDragging = true;
+        handlePointerMove(e.touches[0].clientX);
+      }
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches.length > 0) {
+        handlePointerMove(e.touches[0].clientX);
+      }
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    document.getElementById('scrubberSlider').addEventListener('input', (e) => {
+      if (isRollingAnimation) return;
+      currentNumber = parseInt(e.target.value, 10);
+      playAudioTone('tick');
+      updateUI();
+    });
+
+    // "Roll to Nearest" Spring Animation
+    function animateRollToNearest() {
+      if (isRollingAnimation) return;
+      const bounds = getRoundingBounds(currentNumber, roundingPlace);
+      rollTargetValue = bounds.winner;
+
+      if (currentNumber === rollTargetValue) return;
+
+      isRollingAnimation = true;
+      document.getElementById('btnRollNow').classList.add('opacity-50', 'pointer-events-none');
+      document.getElementById('txtRollNow').textContent = translations[currentLang].rolling;
+      playAudioTone('roll');
+
+      const startVal = currentNumber;
+      const startTime = performance.now();
+      const duration = 750; // ms
+
+      function stepAnimation(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        // EaseOutQuad
+        const ease = 1 - (1 - progress) * (1 - progress);
+        currentNumber = Math.round(startVal + (rollTargetValue - startVal) * ease);
+        updateUI();
+
+        if (progress < 1) {
+          requestAnimationFrame(stepAnimation);
+        } else {
+          currentNumber = rollTargetValue;
+          isRollingAnimation = false;
+          document.getElementById('btnRollNow').classList.remove('opacity-50', 'pointer-events-none');
+          document.getElementById('txtRollNow').textContent = translations[currentLang].rollNow;
+          updateUI();
+          playAudioTone('win');
+          confetti({
+            particleCount: 50,
+            spread: 65,
+            origin: { y: 0.7 }
+          });
+        }
+      }
+      requestAnimationFrame(stepAnimation);
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') {
+        toggleFullScreen();
+      } else if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        animateRollToNearest();
+      } else if (e.key === 'r' || e.key === 'R') {
+        generateRandomNumber();
+      }
+    });
+
+    // Resize observer
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initial setup on load
+    window.onload = function() {
+      resizeCanvas();
+      updateUI();
+    };
+  </script>
+</body>
+</html>

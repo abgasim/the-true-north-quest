@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Step-by-Step Rounding Studio</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #475569;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --accent: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 24px;
+      max-width: 980px;
+      margin: 0 auto 20px auto;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    h2 { color: #38bdf8; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+    .stepper-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .step-badge {
+      flex: 1;
+      min-width: 140px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #0b1120;
+      border: 2px solid var(--border);
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      transition: all 0.25s ease;
+      user-select: none;
+    }
+    .step-badge.active {
+      border-color: #38bdf8;
+      background: #0369a1;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    }
+    .step-badge.completed {
+      border-color: var(--success);
+      color: #4ade80;
+    }
+
+    .step-panel { display: none; }
+    .step-panel.active { display: block; animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .form-box {
+      background: #0b1120;
+      border-radius: 10px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      justify-content: space-between;
+    }
+    input[type="number"] {
+      background: var(--surface);
+      color: #f8fafc;
+      border: 2px solid var(--border);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 1.3rem;
+      font-weight: 800;
+      width: 180px;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 12px;
+    }
+    .pill-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      color: #f8fafc;
+      font-weight: 800;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pill-btn:hover { border-color: #38bdf8; }
+    .pill-btn.selected {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-next { background: var(--success); }
+    .btn-next:hover { background: #15803d; }
+    .btn-rand { background: var(--accent); color: #0f172a; }
+    .btn-rand:hover { background: #d97706; }
+
+    .stage {
+      position: relative;
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 35px 20px 35px 20px;
+      margin-top: 15px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.06);
+    }
+    .line-wrapper {
+      position: relative;
+      max-width: 860px;
+      margin: 0 auto;
+      height: 190px;
+    }
+    .number-line {
+      position: absolute;
+      top: 120px;
+      left: 40px;
+      right: 40px;
+      height: 5px;
+      background: #0f172a;
+      border-radius: 2px;
+    }
+
+    .boundary-station {
+      position: absolute;
+      top: 0;
+      width: 250px;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .station-left { left: 12%; }
+    .station-mid { left: 50%; }
+    .station-right { left: 88%; }
+
+    .options-row {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 12px;
+      z-index: 10;
+    }
+    .opt-box {
+      min-width: 52px;
+      height: 38px;
+      padding: 0 6px;
+      border: 2px solid #0f172a;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      border-radius: 6px;
+    }
+    .opt-box:hover {
+      background: #f1f5f9;
+      transform: translateY(-2px);
+      border-color: #0284c7;
+    }
+    .opt-box.correct {
+      background: var(--success) !important;
+      color: #ffffff !important;
+      border-color: #15803d !important;
+      transform: scale(1.08);
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.4);
+    }
+    .opt-box.incorrect {
+      background: var(--danger) !important;
+      color: #ffffff !important;
+      animation: shake 0.3s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* SIMPLE TICK MARK */
+    .tick-mark {
+      width: 4px;
+      height: 36px;
+      background: #0f172a;
+      margin-bottom: 6px;
+      border-radius: 2px;
+    }
+
+    .tick-label {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #475569;
+      letter-spacing: 0.5px;
+    }
+
+    .placement-drop-row, .rounding-choice-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .target-pin-btn {
+      padding: 10px 18px;
+      background: #ffffff;
+      border: 2px dashed #0284c7;
+      border-radius: 8px;
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .target-pin-btn:hover {
+      background: #e0f2fe;
+      transform: translateY(-2px);
+    }
+
+    .round-choice-btn {
+      padding: 12px 24px;
+      background: #0f172a;
+      border: 2px solid #38bdf8;
+      border-radius: 8px;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 1.15rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .round-choice-btn:hover {
+      background: #0284c7;
+      transform: translateY(-2px);
+    }
+    .round-choice-btn.correct {
+      background: var(--success) !important;
+      border-color: #15803d !important;
+    }
+    .round-choice-btn.incorrect {
+      background: var(--danger) !important;
+      border-color: #b91c1c !important;
+      animation: shake 0.3s ease;
+    }
+
+    .pin-marker {
+      position: absolute;
+      top: 90px;
+      transform: translate(-50%, -50%);
+      min-width: 48px;
+      height: 44px;
+      padding: 0 10px;
+      background: #ef4444;
+      color: white;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 10px rgba(239, 68, 68, 0.5);
+      z-index: 20;
+      transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .feedback-banner {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #0b1120;
+      border: 1px solid var(--border);
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 700;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🎯 Step-by-Step Rounding Studio (Grades 4 & 5)</h2>
+    <p style="color: #cbd5e1; margin-top: 0;">
+      Follow the steps to visualize the boundaries and choose the rounded answer!
+    </p>
+
+    <div class="stepper-nav">
+      <div class="step-badge active" id="badge-step1">1. Choose Number</div>
+      <div class="step-badge" id="badge-step2">2. Rounding Place</div>
+      <div class="step-badge" id="badge-step3">3. Locate Boundaries</div>
+      <div class="step-badge" id="badge-step4">4. Place on Line</div>
+      <div class="step-badge" id="badge-step5">5. Choose Final Answer</div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step-panel active" id="panel-step1">
+      <div class="form-box">
+        <div>
+          <h3 style="margin: 0 0 6px 0; color: #38bdf8;">Step 1: Pick the Number to Round</h3>
+          <p style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Type any whole number between 10 and 9,999, or click Random.</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="number" id="inputNum" value="638" min="10" max="9999">
+          <button class="btn btn-rand" onclick="randomizeNumber()">🎲 Random</button>
+          <button class="btn btn-next" onclick="goToStep(2)">Next: Place Value ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-panel" id="panel-step2">
+      <div class="form-box">
+        <div>
+          <h3 style="margin: 0 0 6px 0; color: #38bdf8;">Step 2: Choose Your Rounding Target</h3>
+          <p style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Which place value are we rounding <strong id="step2NumDisplay" style="color:#ffffff;">638</strong> to?</p>
+        </div>
+        <div class="pill-group">
+          <button class="pill-btn selected" onclick="selectStep(10, this)">Nearest 10</button>
+          <button class="pill-btn" onclick="selectStep(100, this)">Nearest 100</button>
+          <button class="pill-btn" onclick="selectStep(1000, this)">Nearest 1,000</button>
+        </div>
+        <button class="btn btn-next" onclick="prepareStep3()">Next: Boundaries ➔</button>
+      </div>
+    </div>
+
+    <!-- STEP 3, 4, 5 CONTAINER -->
+    <div class="step-panel" id="panel-step3and4">
+      <div class="stage">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: #0369a1;" id="activeTaskTitle">Step 3: Locate Boundaries</h3>
+          <span style="font-size: 0.9rem; color: #64748b;" id="activeTaskSubtitle">Click the correct number box above each tick mark!</span>
+        </div>
+
+        <div class="line-wrapper">
+          <div class="number-line"></div>
+          <div class="pin-marker" id="targetPin" style="display: none; left: 12%;">638</div>
+
+          <!-- MIN TICK -->
+          <div class="boundary-station station-left">
+            <div class="options-row" id="opts-left"></div>
+            <div class="tick-mark"></div>
+            <div class="tick-label">MIN (LOWER)</div>
+          </div>
+
+          <!-- MID TICK -->
+          <div class="boundary-station station-mid">
+            <div class="options-row" id="opts-mid"></div>
+            <div class="tick-mark"></div>
+            <div class="tick-label">MIDPOINT (HALF)</div>
+          </div>
+
+          <!-- MAX TICK -->
+          <div class="boundary-station station-right">
+            <div class="options-row" id="opts-right"></div>
+            <div class="tick-mark"></div>
+            <div class="tick-label">MAX (UPPER)</div>
+          </div>
+        </div>
+
+        <!-- STEP 4 SELECTION CHOICES -->
+        <div id="step4SelectionArea" style="display: none; margin-top: 15px;">
+          <div style="text-align: center; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
+            Where does <span id="pinValDisplay">638</span> sit compared to the midpoint?
+          </div>
+          <div class="placement-drop-row">
+            <button class="target-pin-btn" onclick="placeNumber('left')">⬅️ Left of Midpoint (Before Half)</button>
+            <button class="target-pin-btn" onclick="placeNumber('mid')">🎯 Exactly on Midpoint</button>
+            <button class="target-pin-btn" onclick="placeNumber('right')">➡️ Right of Midpoint (Past Half)</button>
+          </div>
+        </div>
+
+        <!-- STEP 5: STUDENT CHOOSES THE FINAL ROUNDED ANSWER -->
+        <div id="step5RoundingArea" style="display: none; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 15px;">
+          <div style="text-align: center; font-weight: 900; font-size: 1.15rem; color: #0f172a; margin-bottom: 12px;" id="step5Question">
+            Now, based on its position, what does this number round to?
+          </div>
+          <div class="rounding-choice-row" id="roundingChoicesContainer"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+        <button class="btn" style="background: #475569;" onclick="startOver()">🔄 Start New Problem</button>
+      </div>
+    </div>
+
+    <div class="feedback-banner" id="statusMessage">
+      Step 1: Choose a number to start.
+    </div>
+  </div>
+
+  <script>
+    let currentNumber = 638;
+    let currentStep = 10;
+    let currentMin = 630;
+    let currentMid = 635;
+    let currentMax = 640;
+
+    let boundariesComplete = { left: false, mid: false, right: false };
+
+    let audioCtx = null;
+    function playBeep(freq, duration=0.15, type="sine") {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e){}
+    }
+
+    function randomizeNumber() {
+      const rand = Math.floor(Math.random() * 8900) + 100;
+      document.getElementById("inputNum").value = rand;
+      playBeep(480, 0.1);
+    }
+
+    function goToStep(step) {
+      document.querySelectorAll(".step-panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".step-badge").forEach(b => b.classList.remove("active"));
+
+      for (let i = 1; i < step; i++) {
+        document.getElementById(`badge-step${i}`).classList.add("completed");
+      }
+      document.getElementById(`badge-step${step}`).classList.add("active");
+
+      if (step === 2) {
+        currentNumber = parseInt(document.getElementById("inputNum").value, 10) || 638;
+        document.getElementById("step2NumDisplay").textContent = currentNumber;
+        document.getElementById("panel-step2").classList.add("active");
+        document.getElementById("statusMessage").textContent = `Step 2: Choose whether to round ${currentNumber} to the nearest 10, 100, or 1,000.`;
+      }
+    }
+
+    function selectStep(val, btnElement) {
+      currentStep = val;
+      document.querySelectorAll(".pill-btn").forEach(btn => btn.classList.remove("selected"));
+      if (btnElement) {
+        btnElement.classList.add("selected");
+      }
+      playBeep(520, 0.1);
+    }
+
+    function prepareStep3() {
+      currentNumber = parseInt(document.getElementById("inputNum").value, 10) || 638;
+
+      document.querySelectorAll(".step-panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".step-badge").forEach(b => b.classList.remove("active"));
+
+      document.getElementById("badge-step1").classList.add("completed");
+      document.getElementById("badge-step2").classList.add("completed");
+      document.getElementById("badge-step3").classList.add("active");
+
+      document.getElementById("panel-step3and4").classList.add("active");
+
+      currentMin = Math.floor(currentNumber / currentStep) * currentStep;
+      currentMax = currentMin + currentStep;
+      currentMid = currentMin + (currentStep / 2);
+
+      boundariesComplete = { left: false, mid: false, right: false };
+
+      const stepWord = (currentStep === 10) ? "TEN" : (currentStep === 100) ? "HUNDRED" : "THOUSAND";
+      document.getElementById("activeTaskTitle").textContent = `Step 3: Locate Boundaries for ${currentNumber.toLocaleString()} (Nearest ${stepWord})`;
+      document.getElementById("activeTaskSubtitle").textContent = 
+        `Click the correct number box above each tick mark for ${currentNumber}!`;
+
+      document.getElementById("targetPin").style.display = "none";
+      document.getElementById("step4SelectionArea").style.display = "none";
+      document.getElementById("step5RoundingArea").style.display = "none";
+
+      // Non-conflicting distractor generator
+      let distractor;
+      if (currentStep === 10) {
+        const deltas = [-10, -5, 5, 10];
+        const d = deltas[Math.floor(Math.random() * deltas.length)];
+        distractor = (d < 0) ? currentMin + d : currentMax + d;
+      } else {
+        const offset = Math.round(currentStep * 0.25) * (Math.random() > 0.5 ? 1 : -1);
+        distractor = currentMid + offset;
+        if (distractor === currentMin || distractor === currentMax || distractor === currentMid) {
+          distractor = currentMax + Math.round(currentStep * 0.5);
+        }
+      }
+
+      const candidates = [currentMin, currentMid, currentMax, distractor];
+
+      buildOptionRow("opts-left", [...candidates], currentMin, "left");
+      buildOptionRow("opts-mid", [...candidates], currentMid, "mid");
+      buildOptionRow("opts-right", [...candidates], currentMax, "right");
+
+      document.getElementById("statusMessage").textContent = "Click one box above each tick mark to set the boundaries!";
+      document.getElementById("statusMessage").style.color = "#f8fafc";
+    }
+
+    function buildOptionRow(rowId, choices, correctVal, key) {
+      const container = document.getElementById(rowId);
+      container.innerHTML = "";
+      choices.sort(() => Math.random() - 0.5);
+
+      choices.forEach(val => {
+        const box = document.createElement("div");
+        box.className = "opt-box";
+        box.textContent = val.toLocaleString();
+        box.onclick = () => {
+          if (boundariesComplete[key]) return;
+          if (val === correctVal) {
+            box.classList.add("correct");
+            boundariesComplete[key] = true;
+            playBeep(650, 0.15, "triangle");
+
+            const siblings = box.parentElement.children;
+            for (let sib of siblings) {
+              if (sib !== box) {
+                sib.style.opacity = "0.3";
+                sib.style.pointerEvents = "none";
+              }
+            }
+            checkBoundariesDone();
+          } else {
+            box.classList.add("incorrect");
+            playBeep(220, 0.25, "sawtooth");
+            setTimeout(() => box.classList.remove("incorrect"), 500);
+          }
+        };
+        container.appendChild(box);
+      });
+    }
+
+    function checkBoundariesDone() {
+      if (boundariesComplete.left && boundariesComplete.mid && boundariesComplete.right) {
+        playBeep(780, 0.3);
+        document.getElementById("statusMessage").innerHTML = 
+          `🌟 <strong>Boundaries set!</strong> Min: ${currentMin.toLocaleString()}, Midpoint: ${currentMid.toLocaleString()}, Max: ${currentMax.toLocaleString()}. Moving to Step 4!`;
+        document.getElementById("statusMessage").style.color = "var(--success)";
+        setTimeout(prepareStep4, 1000);
+      }
+    }
+
+    // STEP 4: PLACE NUMBER ON LINE
+    function prepareStep4() {
+      document.querySelectorAll(".step-badge").forEach(b => b.classList.remove("active"));
+      document.getElementById("badge-step3").classList.add("completed");
+      document.getElementById("badge-step4").classList.add("active");
+
+      document.getElementById("activeTaskTitle").textContent = "Step 4: Locate the Number on the Number Line";
+      document.getElementById("activeTaskSubtitle").textContent = 
+        `Decide if ${currentNumber.toLocaleString()} sits to the left of the midpoint, right of it, or exactly in the middle!`;
+
+      document.getElementById("pinValDisplay").textContent = currentNumber.toLocaleString();
+      document.getElementById("step4SelectionArea").style.display = "block";
+
+      const pin = document.getElementById("targetPin");
+      pin.textContent = currentNumber.toLocaleString();
+      pin.style.display = "flex";
+      pin.style.left = "50%"; // Center starting position
+
+      document.getElementById("statusMessage").textContent = 
+        `Where does ${currentNumber.toLocaleString()} sit compared to the midpoint (${currentMid.toLocaleString()})?`;
+      document.getElementById("statusMessage").style.color = "#38bdf8";
+    }
+
+    function placeNumber(chosenPosition) {
+      let correctPosition;
+      if (currentNumber < currentMid) correctPosition = "left";
+      else if (currentNumber > currentMid) correctPosition = "right";
+      else correctPosition = "mid";
+
+      const pin = document.getElementById("targetPin");
+      const fraction = (currentNumber - currentMin) / (currentMax - currentMin);
+      const targetPercent = 12 + (fraction * (88 - 12));
+      pin.style.left = `${targetPercent}%`;
+
+      if (chosenPosition === correctPosition) {
+        playBeep(740, 0.25, "sine");
+        document.getElementById("statusMessage").innerHTML = 
+          `🎯 <strong>Correct placement!</strong> ${currentNumber.toLocaleString()} is positioned on the line. Now let's round it!`;
+        document.getElementById("statusMessage").style.color = "var(--success)";
+        setTimeout(prepareStep5, 900);
+      } else {
+        playBeep(260, 0.3, "sawtooth");
+        document.getElementById("statusMessage").innerHTML = 
+          `❌ Notice where ${currentNumber.toLocaleString()} sits! The pin moved to show its actual spot relative to ${currentMid.toLocaleString()}. Try again!`;
+        document.getElementById("statusMessage").style.color = "var(--danger)";
+      }
+    }
+
+    // STEP 5: STUDENT CHOOSES THE FINAL ROUNDED ANSWER
+    function prepareStep5() {
+      document.querySelectorAll(".step-badge").forEach(b => b.classList.remove("active"));
+      document.getElementById("badge-step4").classList.add("completed");
+      document.getElementById("badge-step5").classList.add("active");
+
+      document.getElementById("activeTaskTitle").textContent = "Step 5: Choose the Rounded Number";
+      document.getElementById("activeTaskSubtitle").textContent = 
+        "Look at which boundary your number is closer to (or remember the tie-breaker rule)!";
+
+      document.getElementById("step4SelectionArea").style.display = "none";
+      const step5Area = document.getElementById("step5RoundingArea");
+      step5Area.style.display = "block";
+
+      const stepWord = (currentStep === 10) ? "ten" : (currentStep === 100) ? "hundred" : "thousand";
+      document.getElementById("step5Question").textContent = 
+        `What is ${currentNumber.toLocaleString()} rounded to the nearest ${stepWord}?`;
+
+      // Candidate options: Min, Max, and one distractor multiple
+      const correctRounded = (currentNumber >= currentMid) ? currentMax : currentMin;
+      const distractorMultiple = (correctRounded === currentMax) ? (currentMin - currentStep) : (currentMax + currentStep);
+
+      const roundingChoices = [currentMin, currentMax, distractorMultiple];
+      roundingChoices.sort(() => Math.random() - 0.5);
+
+      const container = document.getElementById("roundingChoicesContainer");
+      container.innerHTML = "";
+
+      roundingChoices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.className = "round-choice-btn";
+        btn.textContent = choice.toLocaleString();
+        btn.onclick = () => handleFinalChoice(btn, choice, correctRounded);
+        container.appendChild(btn);
+      });
+
+      document.getElementById("statusMessage").textContent = 
+        `Make your choice: What does ${currentNumber.toLocaleString()} round to?`;
+      document.getElementById("statusMessage").style.color = "#38bdf8";
+    }
+
+    function handleFinalChoice(btn, chosen, correct) {
+      if (chosen === correct) {
+        btn.classList.add("correct");
+        playBeep(820, 0.4, "sine");
+        document.getElementById("badge-step5").classList.add("completed");
+
+        const isUp = (currentNumber >= currentMid);
+        const reason = (currentNumber === currentMid)
+          ? `It lands exactly on the midpoint (${currentMid.toLocaleString()}), so we round UP!`
+          : isUp
+            ? `It is past the midpoint (${currentMid.toLocaleString()}), so it rounds UP to the upper benchmark!`
+            : `It is before the midpoint (${currentMid.toLocaleString()}), so it rounds DOWN to the lower benchmark!`;
+
+        document.getElementById("statusMessage").innerHTML = 
+          `🎉 <strong>CORRECT!</strong> ${currentNumber.toLocaleString()} rounds to <strong>${correct.toLocaleString()}</strong>. ${reason}`;
+        document.getElementById("statusMessage").style.color = "var(--success)";
+
+        // Disable other buttons
+        const siblings = btn.parentElement.children;
+        for (let sib of siblings) {
+          if (sib !== btn) {
+            sib.style.opacity = "0.35";
+            sib.style.pointerEvents = "none";
+          }
+        }
+      } else {
+        btn.classList.add("incorrect");
+        playBeep(240, 0.3, "sawtooth");
+        document.getElementById("statusMessage").textContent = 
+          `❌ Not quite. Check which benchmark ${currentNumber.toLocaleString()} is closest to and try again!`;
+        document.getElementById("statusMessage").style.color = "var(--danger)";
+        setTimeout(() => btn.classList.remove("incorrect"), 600);
+      }
+    }
+
+    function startOver() {
+      document.querySelectorAll(".step-badge").forEach(b => {
+        b.classList.remove("active");
+        b.classList.remove("completed");
+      });
+      document.getElementById("badge-step1").classList.add("active");
+      document.querySelectorAll(".step-panel").forEach(p => p.classList.remove("active"));
+      document.getElementById("panel-step1").classList.add("active");
+      document.getElementById("statusMessage").textContent = "Step 1: Choose a number to start.";
+      document.getElementById("statusMessage").style.color = "#f8fafc";
+    }
+  </script>
+</body>
+</html>
