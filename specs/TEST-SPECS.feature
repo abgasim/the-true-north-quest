@@ -146,6 +146,15 @@ Feature: Hub
     Then the menu opens a drawer over a blurred backdrop, the stage is inert, Escape closes it and focus returns
     And at 1440 px the sidebar is a static pane
 
+  @HUB-LAUNCHER
+  Scenario: App-style navigation on phones
+    Given a 390 px phone
+    When the hub opens with no lesson in the address
+    Then a launcher shows one large tile per lesson, grouped by subject, with no lesson loaded behind it
+    When a tile is tapped
+    Then the lesson fills the screen below a single app bar with a back button and the lesson title
+    And the back button and the phone's own back gesture both return to the launcher
+
   @NO-AMHARIC-SOURCE
   Scenario: The shipped source stays English-only
     Then the hub, every registered module, tools/ and specs/ contain no Ge'ez script, no Ethiopic font and no language-switching code
@@ -159,6 +168,11 @@ Feature: Mobile, layout and print
   @MOBILE-TOUCH
   Scenario: Touch targets
     Then every hub control is at least 44 × 44 px on a touch screen
+
+  @MOBILE-READABLE
+  Scenario: Readable text on phones
+    Given a 390 px phone screen
+    Then no visible lesson text is smaller than 12 px, because small Tailwind labels are enlarged on screens up to 640 px wide
 
   @MOBILE-VIEWPORT
   Scenario: Phone viewport

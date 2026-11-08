@@ -45,6 +45,30 @@ test('@MOBILE-TOUCH hub controls are at least 44×44 px on touch screens', async
   assert.deepEqual(small, []);
 });
 
+test('@MOBILE-READABLE no visible lesson text is smaller than 12 px on a phone', async () => {
+  const ctx = await contextFor(browser, 'offline-file', { viewport: VIEWPORTS['iphone-14'], isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  const tooSmall = [];
+  for (const m of MODULES) {
+    await openModule(page, fileUrl(m.file));
+    const hits = await page.evaluate(() => {
+      const out = [];
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        const el = n.parentElement;
+        if (!el || !n.nodeValue.trim() || el.closest('svg, script, style, [aria-hidden="true"]')) continue;
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || !el.getClientRects().length) continue;
+        if (parseFloat(cs.fontSize) < 12) out.push(`${cs.fontSize} "${n.nodeValue.trim().slice(0, 30)}"`);
+      }
+      return out;
+    });
+    for (const h of hits) tooSmall.push(`${m.file}: ${h}`);
+  }
+  await ctx.close();
+  assert.deepEqual(tooSmall, []);
+});
+
 test('@MOBILE-VIEWPORT every page is zoomable, fits the screen and respects the notch', async () => {
   const ctx = await contextFor(browser, 'offline-file', { viewport: VIEWPORTS['iphone-14'], isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
@@ -54,7 +78,7 @@ test('@MOBILE-VIEWPORT every page is zoomable, fits the screen and respects the 
     assert.match(vp, /width=device-width/, file);
     assert.doesNotMatch(vp, /user-scalable\s*=\s*(no|0)|maximum-scale\s*=\s*1(\.0)?\b/, `${file} blocks zoom`);
   }
-  await openModule(page, fileUrl('index.html'));
+  await openModule(page, fileUrl('index.html') + '#/column_ops');   // inside a lesson: one app bar
   const hub = await page.evaluate(() => ({ h: document.body.getBoundingClientRect().height, vh: window.innerHeight, frame: document.getElementById('stageFrame').getBoundingClientRect().height }));
   await ctx.close();
   assert.ok(Math.abs(hub.h - hub.vh) <= 1, 'hub fills exactly one screen (no page scroll behind the lesson)');

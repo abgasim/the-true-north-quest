@@ -12,7 +12,7 @@ let browser, server;
 before(async () => { browser = await launch(); server = await startServer(); });
 after(async () => { await server?.close(); await browser?.close(); });
 
-const frameModule = (page) => page.evaluate(() => document.getElementById('stageFrame').getAttribute('src'));
+const frameModule = (page) => page.evaluate(() => document.getElementById('stageFrame').dataset.lesson);
 async function openHub(page, url) {
   await page.goto(url);
   await page.waitForFunction(() => document.querySelector('.lesson-item[aria-current="page"]'));
@@ -67,7 +67,7 @@ test('@HUB-DEEPLINK hash routes select the module; unknown ids fall back to the 
   assert.equal(await frameModule(page), 'number_sense_studio.html');
   assert.equal(await page.textContent('#currentLessonTitle'), 'Number Sense Studio');
   await page.goto(server.origin + '/#/does_not_exist');
-  await page.waitForFunction(() => document.getElementById('stageFrame').getAttribute('src'));
+  await page.waitForFunction(() => document.getElementById('stageFrame').dataset.lesson);
   assert.equal(await frameModule(page), MODULES[0].file);
   await ctx.close();
 });
@@ -75,8 +75,9 @@ test('@HUB-DEEPLINK hash routes select the module; unknown ids fall back to the 
 test('@HUB-DRAWER mobile drawer with blurred backdrop; desktop multi-pane', async () => {
   const ctx = await contextFor(browser, 'no-internet', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
-  await openHub(page, server.origin + '/');
-  const sidebarVisible = () => page.evaluate(() => { const r = document.getElementById('sidebar').getBoundingClientRect(); return getComputedStyle(document.getElementById('sidebar')).visibility === 'visible' && r.right > 0; });
+  await page.goto(server.origin + '/');
+  await page.waitForSelector('.home-tile');          // phones open on the launcher
+  const sidebarVisible =() => page.evaluate(() => { const r = document.getElementById('sidebar').getBoundingClientRect(); return getComputedStyle(document.getElementById('sidebar')).visibility === 'visible' && r.right > 0; });
   assert.equal(await sidebarVisible(), false, 'drawer starts closed on phones');
   assert.equal(await page.getAttribute('#menuToggle', 'aria-expanded'), 'false');
   await page.click('#menuToggle');
@@ -101,6 +102,48 @@ test('@HUB-DRAWER mobile drawer with blurred backdrop; desktop multi-pane', asyn
   const pane = await page.evaluate(() => getComputedStyle(document.getElementById('sidebar')).position);
   assert.equal(pane, 'static');
   await ctx.close();
+});
+
+test('@HUB-LAUNCHER phones get an app launcher, one app bar, and back navigation that leaves the lesson', async () => {
+  const ctx = await contextFor(browser, 'no-internet', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  const issues = collectIssues(page);
+  await page.goto(server.origin + '/');
+  await page.waitForSelector('.home-tile');
+  const home = await page.evaluate(() => ({
+    tiles: document.querySelectorAll('.home-tile').length,
+    stageHidden: getComputedStyle(document.querySelector('.iframe-holder')).display === 'none',
+    smallest: Math.min(...[...document.querySelectorAll('.home-tile')].map(t => Math.min(t.getBoundingClientRect().width, t.getBoundingClientRect().height))),
+  }));
+  assert.equal(home.tiles, MODULES.length, 'one tile per lesson');
+  assert.ok(home.stageHidden, 'no lesson is loaded behind the launcher');
+  assert.ok(home.smallest >= 120, `tiles are large touch targets (smallest side ${home.smallest}px)`);
+  await page.tap('.home-tile[data-id="column_ops"]');
+  await page.frameLocator('#stageFrame').locator('#ans_0').waitFor();
+  const lesson = await page.evaluate(() => ({
+    header: getComputedStyle(document.querySelector('header.app-header')).display,
+    back: getComputedStyle(document.getElementById('btnHome')).display,
+    title: document.getElementById('currentLessonTitle').textContent,
+    frameH: document.getElementById('stageFrame').getBoundingClientRect().height,
+  }));
+  assert.equal(lesson.header, 'none', 'single app bar inside a lesson');
+  assert.notEqual(lesson.back, 'none');
+  assert.equal(lesson.title, 'Operation Grid & Word Quest');
+  assert.ok(lesson.frameH >= 844 - 60, `the lesson gets the whole screen below one bar (${lesson.frameH}px)`);
+  await page.tap('#btnHome');
+  await page.waitForSelector('#home:not([hidden])');
+  // The phone's own back gesture must also leave the lesson (iframe loads add no history entries).
+  await page.tap('.home-tile[data-id="number_sense"]');
+  await page.frameLocator('#stageFrame').locator('#quizWorkspace').waitFor();
+  await page.goBack();
+  await page.waitForSelector('#home:not([hidden])');
+  // Deep link straight into a lesson, then ‹ goes to the launcher.
+  await page.goto(server.origin + '/#/rounding_line');
+  await page.waitForFunction(() => document.getElementById('stageFrame').dataset.lesson === 'rounding_number_line.html');
+  await page.tap('#btnHome');
+  await page.waitForSelector('#home:not([hidden])');
+  await ctx.close();
+  assert.deepEqual(issues.pageErrors, []);
 });
 
 test('@NO-AMHARIC-SOURCE the shipped app contains no Amharic text, Ethiopic fonts or language switching', () => {

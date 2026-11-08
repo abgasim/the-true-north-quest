@@ -202,7 +202,8 @@
     }
     /* Touch screens: WCAG 2.5.5 target size (44 px) for every hub control. */
     @media (pointer: coarse) {
-      .tool-btn { min-height: 44px; min-width: 44px; justify-content: center; }
+      .tool-btn { min-height: 44px; min-width: 44px; justify-content: center; font-size: 1.2rem; }
+      .tool-btn .btn-label { font-size: 0.85rem; }
       .lesson-item { min-height: 52px; }
       .lesson-item:hover { transform: none; }
     }
@@ -213,6 +214,46 @@
     .install-hint[hidden] { display: none; }
     .stage-toolbar { -webkit-user-select: none; user-select: none; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+    /* ---------- App-style compact mode (< 1024 px): launcher + single app bar ---------- */
+    .back-btn { display: none; font-size: 1.9rem !important; line-height: 1; padding-bottom: 4px; }
+    .home-screen {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+      padding: 16px max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      background: var(--bg);
+    }
+    .home-hero h2 { margin: 4px 0 2px; font-size: 1.6rem; font-weight: 800; color: #f8fafc; }
+    .home-hero p { margin: 0 0 8px; color: var(--text-muted); font-size: 0.95rem; }
+    .home-group h3 { margin: 22px 0 10px; font-size: 1rem; font-weight: 800; color: #38bdf8; letter-spacing: 0.3px; }
+    .home-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    @media (min-width: 600px) { .home-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .home-tile {
+      display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 132px;
+      padding: 14px; border-radius: 18px; text-decoration: none; color: var(--text);
+      background: linear-gradient(160deg, #1e293b 0%, #172033 100%);
+      border: 1px solid var(--border); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .home-tile:active { transform: scale(0.97); border-color: #38bdf8; }
+    .home-tile .tile-icon { font-size: 2.3rem; line-height: 1; }
+    .home-tile .tile-title { font-size: 1.02rem; font-weight: 800; line-height: 1.25; }
+    .home-tile .tile-desc { font-size: 0.86rem; color: var(--text-muted); line-height: 1.35; }
+
+    @media (max-width: 1023.98px) {
+      .back-btn { display: inline-flex; }
+      /* Launcher showing: hide the lesson stage. */
+      body.at-home .stage-toolbar, body.at-home .iframe-holder { display: none; }
+      /* Lesson open: the stage toolbar becomes the only app bar. */
+      body.in-lesson header.app-header { display: none; }
+      body.in-lesson .stage-toolbar {
+        height: calc(56px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top);
+        padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right));
+        background: #0f172a; border-bottom: 1px solid var(--border); gap: 6px;
+      }
+      body.in-lesson .stage-title { font-size: 1.05rem; }
+      .stage-title-wrap { flex: 1; }
+      #btnStandalone { display: none !important; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
     }
@@ -252,7 +293,16 @@
     </aside>
 
     <main class="viewport-stage" id="stage">
+      <!-- Phone/tablet launcher (compact mode, no lesson open): SPEC-CORE.md §4.5 -->
+      <section class="home-screen" id="home" aria-labelledby="homeTitle" hidden>
+        <div class="home-hero">
+          <h2 id="homeTitle">Pick a lesson</h2>
+          <p>Grade 4 &amp; 5 · Social Studies and Math · works offline</p>
+        </div>
+        <div id="homeGroups"></div>
+      </section>
       <div class="stage-toolbar">
+        <button class="tool-btn back-btn" type="button" id="btnHome" aria-label="Back to all lessons" title="All lessons">‹</button>
         <div class="stage-title-wrap">
           <h2 id="currentLessonTitle" class="stage-title">Loading…</h2>
           <span id="currentCurriculum" class="curriculum-tag"></span>
@@ -350,6 +400,51 @@
       $('moduleCount').textContent = ALL.length + ' modules';
     }
 
+    // ---------------------------------------------------------------- launcher (compact mode)
+    function buildHome() {
+      const wrap = $('homeGroups');
+      wrap.textContent = '';
+      LESSONS_REGISTRY.forEach((group, gi) => {
+        const sec = document.createElement('section');
+        sec.className = 'home-group';
+        sec.setAttribute('aria-labelledby', 'homegroup-' + gi);
+        const h = document.createElement('h3');
+        h.id = 'homegroup-' + gi;
+        h.textContent = group.category;
+        const ul = document.createElement('ul');
+        ul.className = 'home-grid';
+        group.items.forEach(item => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.className = 'home-tile';
+          a.href = '#/' + item.id;
+          a.dataset.id = item.id;
+          a.innerHTML = '<span class="tile-icon" aria-hidden="true"></span><span class="tile-title"></span><span class="tile-desc"></span>';
+          a.querySelector('.tile-icon').textContent = item.icon;
+          a.querySelector('.tile-title').textContent = item.title;
+          a.querySelector('.tile-desc').textContent = item.desc;
+          li.appendChild(a);
+          ul.appendChild(li);
+        });
+        sec.append(h, ul);
+        wrap.appendChild(sec);
+      });
+    }
+
+    function showHome() {
+      state.active = null;
+      state.cameFromHome = false;
+      state.moduleInfo = null;
+      setFrameUrl('about:blank');            // stop any lesson audio/animation
+      document.querySelectorAll('.lesson-item').forEach(a => a.removeAttribute('aria-current'));
+      document.body.classList.add('at-home');
+      document.body.classList.remove('in-lesson');
+      $('home').hidden = false;
+      $('stageLoading').hidden = true;
+      document.title = 'The True North Quest | Grade 4 & 5 Learning Hub';
+      closeDrawer({ restoreFocus: false });
+    }
+
     function syncSidebar(item) {
       document.querySelectorAll('.lesson-item').forEach(a => {
         if (a.dataset.id === item.id) a.setAttribute('aria-current', 'page');
@@ -362,15 +457,27 @@
     }
 
     // ---------------------------------------------------------------- iframe lifecycle
+    // Navigating with location.replace() keeps lesson loads OUT of the page history, so the
+    // phone's back gesture (and the ‹ button) leave the lesson instead of stepping the iframe.
+    // The current lesson URL is mirrored in data-lesson for tests and diagnostics.
+    function setFrameUrl(url) {
+      frame.dataset.lesson = url === 'about:blank' ? '' : url;
+      try { frame.contentWindow.location.replace(new URL(url, location.href).href); }
+      catch (e) { frame.src = url; }
+    }
+
     // idle -> loading (src set) -> loaded (load event) -> ready (tnq:ready) ; any -> loading on navigate
     function loadLesson(item, { push = true } = {}) {
       if (!item) item = ALL[0];
       state.active = item;
       state.moduleInfo = null;
+      document.body.classList.remove('at-home');
+      document.body.classList.add('in-lesson');
+      $('home').hidden = true;
       syncSidebar(item);
       $('scoreChip').textContent = '';
       $('stageLoading').hidden = false;
-      frame.src = item.file;
+      setFrameUrl(item.file);
       if (push && location.hash !== '#/' + item.id) history.replaceState(null, '', '#/' + item.id);
       closeDrawer({ restoreFocus: false });
     }
@@ -444,7 +551,7 @@
 
     // ---------------------------------------------------------------- toolbar
     $('btnReload').addEventListener('click', () => {
-      try { frame.contentWindow.location.reload(); } catch (e) { frame.src = state.active.file; }
+      try { frame.contentWindow.location.reload(); } catch (e) { setFrameUrl(state.active.file); }
       $('stageLoading').hidden = false;
     });
     $('btnStandalone').addEventListener('click', () => { if (state.active) window.open(state.active.file, '_blank', 'noopener'); });
@@ -453,12 +560,29 @@
     });
 
     // ---------------------------------------------------------------- routing
+    // Desktop: an empty/unknown route opens the first lesson (multi-pane).
+    // Compact (< 1024 px): an empty route shows the launcher; unknown ids also go there.
     function routeFromHash() {
       const id = decodeURIComponent((location.hash.match(/^#\/(.+)$/) || [])[1] || '');
-      const item = byId.get(id) || ALL[0];
-      if (item !== state.active) loadLesson(item, { push: !byId.has(id) });
+      const item = byId.get(id);
+      if (!item && isDrawerMode()) { if (!document.body.classList.contains('at-home')) showHome(); return; }
+      const target = item || ALL[0];
+      if (target !== state.active) loadLesson(target, { push: !item });
     }
     window.addEventListener('hashchange', routeFromHash);
+    $('btnHome').addEventListener('click', () => {
+      // Opened from the launcher: go back in history so the phone's back gesture and this
+      // button agree. Deep-linked straight into a lesson: go to the launcher instead.
+      if (state.cameFromHome) history.back();
+      else location.hash = '#/';
+    });
+    document.addEventListener('click', (e) => {
+      if (e.target.closest && e.target.closest('.home-tile')) state.cameFromHome = true;
+    });
+    DESKTOP.addEventListener('change', () => {
+      if (DESKTOP.matches && document.body.classList.contains('at-home')) loadLesson(ALL[0], { push: true });
+      else if (!DESKTOP.matches) routeFromHash();
+    });
 
     // ---------------------------------------------------------------- PWA: offline cache + install
     // Service workers need a secure context (https or localhost); file:// and plain-http LAN skip this.
@@ -489,6 +613,7 @@
     if (standalone) $('btnStandalone').hidden = true;
 
     buildSidebar();
+    buildHome();
     applyViewportMode();
     routeFromHash();
   </script>

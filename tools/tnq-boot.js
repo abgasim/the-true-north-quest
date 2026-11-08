@@ -61,6 +61,16 @@
    * Hold paint until DOMContentLoaded (all sync scripts done). Written via JS, so a
    * no-JS visitor is never gated; released after 3 s no matter what. */
   d.write('<style id="tnq-gate">html:not(.tnq-ready) body{visibility:hidden}</style>');
+
+  /* ---- 3b. Phone readability (SPEC-CORE.md §4.3) ----
+   * Lessons were designed on desktop with Tailwind's 12 px text-xs and 9-11 px
+   * micro-labels. On phone screens raise them to 14 px / 13 px. Screen only, so
+   * print layouts are untouched; !important beats the Tailwind runtime's styles. */
+  d.write('<style id="tnq-readable">@media screen and (max-width:640px){' +
+    'html{-webkit-text-size-adjust:100%;text-size-adjust:100%;font-size:17px}' +
+    '.text-xs{font-size:.875rem!important;line-height:1.25rem!important}' +
+    '[class~="text-[8px]"],[class~="text-[9px]"],[class~="text-[10px]"],[class~="text-[11px]"]' +
+    '{font-size:.8125rem!important;line-height:1.2!important}}</style>');
   var release = function () { d.documentElement.classList.add('tnq-ready'); };
   setTimeout(release, 3000);
 
