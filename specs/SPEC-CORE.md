@@ -101,6 +101,9 @@ All messages are plain objects of the form `{ tnq: 1, type: string, module?: str
 - Below 640 px, labels collapse to icons.
 - Below 380 px, the score chip is hidden.
 - On `pointer: coarse`, every hub control is at least 44 × 44 px (WCAG 2.5.5).
+- On screens up to 640 px wide, the boot runtime enlarges lesson text: `text-xs` to 14 px and
+  9–11 px labels to 13 px (screen only, so print is unchanged). No visible lesson text is below 12 px.
+  Hub toolbar icons render at 1.2 rem on touch screens.
 
 ### 4.4 Layout stability
 

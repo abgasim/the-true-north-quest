@@ -69,6 +69,16 @@
    * Hold paint until DOMContentLoaded (all sync scripts done). Written via JS, so a
    * no-JS visitor is never gated; released after 3 s no matter what. */
   d.write('<style id="tnq-gate">html:not(.tnq-ready) body{visibility:hidden}</style>');
+
+  /* ---- 3b. Phone readability (SPEC-CORE.md §4.3) ----
+   * Lessons were designed on desktop with Tailwind's 12 px text-xs and 9-11 px
+   * micro-labels. On phone screens raise them to 14 px / 13 px. Screen only, so
+   * print layouts are untouched; !important beats the Tailwind runtime's styles. */
+  d.write('<style id="tnq-readable">@media screen and (max-width:640px){' +
+    'html{-webkit-text-size-adjust:100%;text-size-adjust:100%}' +
+    '.text-xs{font-size:.875rem!important;line-height:1.25rem!important}' +
+    '[class~="text-[8px]"],[class~="text-[9px]"],[class~="text-[10px]"],[class~="text-[11px]"]' +
+    '{font-size:.8125rem!important;line-height:1.2!important}}</style>');
   var release = function () { d.documentElement.classList.add('tnq-ready'); };
   setTimeout(release, 3000);
 
@@ -352,7 +362,7 @@
 
   <header>
     <h1>🇨🇦 Canada Visual Box Map Hub</h1>
-    <p>Simplified Visual Cheat-Sheet with Sharp Vector Figures for Grade 4 & 5[cite: 19]!</p>
+    <p>Simplified Visual Cheat-Sheet with Sharp Vector Figures for Grade 4 & 5!</p>
   </header>
 
   <nav>
@@ -367,7 +377,7 @@
     <div id="map-tab" class="tab-content active">
       <div class="card">
         <h2>Interactive Schematic Map with High-Clarity Figures</h2>
-        <p>Switch between viewing full figures with text, figures only for self-testing, or codes only[cite: 19]!</p>
+        <p>Switch between viewing full figures with text, figures only for self-testing, or codes only!</p>
 
         <!-- Display Mode Toggle -->
         <div class="controls-bar">
@@ -381,7 +391,7 @@
           <div id="tooltip" class="map-tooltip"></div>
           
           <div style="text-align: center; margin-bottom: 6px; font-weight: 800; color: #0284c7; letter-spacing: 2px;">
-            ▲ ARCTIC OCEAN (NORTH) ▲[cite: 10]
+            ▲ ARCTIC OCEAN (NORTH) ▲
           </div>
 
           <svg class="box-map" viewBox="0 0 900 600" id="box-svg">
@@ -579,9 +589,9 @@
           </svg>
 
           <div style="display: flex; justify-content: space-between; margin-top: 6px; font-weight: 800; color: #0284c7; letter-spacing: 1px;">
-            <span>◀ PACIFIC OCEAN (WEST)[cite: 10]</span>
-            <span style="color: #475569;">▼ UNITED STATES (SOUTH)[cite: 10] ▼</span>
-            <span>ATLANTIC OCEAN (EAST) ▶[cite: 10]</span>
+            <span>◀ PACIFIC OCEAN (WEST)</span>
+            <span style="color: #475569;">▼ UNITED STATES (SOUTH) ▼</span>
+            <span>ATLANTIC OCEAN (EAST) ▶</span>
           </div>
         </div>
 
@@ -589,7 +599,7 @@
           <div>
             <span id="reg-type" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; color: #64748b; font-weight: bold;">Click any Box on the Map</span>
             <h3 id="reg-name" style="margin: 2px 0;">Interactive Explorer Active</h3>
-            <p id="reg-details" style="margin: 2px 0; color: #475569;">Hover over or click any box to see what it is known for, its capital city, and why that figure represents it[cite: 6]!</p>
+            <p id="reg-details" style="margin: 2px 0; color: #475569;">Hover over or click any box to see what it is known for, its capital city, and why that figure represents it!</p>
           </div>
           <button class="btn btn-outline" onclick="resetSelection()">Reset</button>
         </div>
@@ -663,17 +673,17 @@
     <div id="practice-tab" class="tab-content">
       <div class="card">
         <h2>✍️ Visual Figure Practice</h2>
-        <p>Match the vector illustration to its province or territory[cite: 19]:</p>
+        <p>Match the vector illustration to its province or territory:</p>
         
         <div style="margin-bottom: 12px; display:flex; align-items:center; gap:12px;">
           <svg width="40" height="40" viewBox="0 0 48 48"><use href="#fig-pe"/></svg>
           <div>
-            <span>1. What province does the <strong>potato</strong> represent?[cite: 19]</span><br>
+            <span>1. What province does the <strong>potato</strong> represent?</span><br>
             <select id="pq-1" style="margin-top:4px; padding:6px 10px;">
               <option value="">Select province...</option>
-              <option value="PE">Prince Edward Island (PE)[cite: 6, 19]</option>
-              <option value="AB">Alberta (AB)[cite: 6, 19]</option>
-              <option value="ON">Ontario (ON)[cite: 6, 19]</option>
+              <option value="PE">Prince Edward Island (PE)</option>
+              <option value="AB">Alberta (AB)</option>
+              <option value="ON">Ontario (ON)</option>
             </select>
             <span id="pfb-1" style="font-weight: bold; margin-left: 8px;"></span>
           </div>
@@ -682,12 +692,12 @@
         <div style="margin-bottom: 12px; display:flex; align-items:center; gap:12px;">
           <svg width="40" height="40" viewBox="0 0 48 48"><use href="#fig-sk"/></svg>
           <div>
-            <span>2. What province does the <strong>golden wheat</strong> represent?[cite: 19]</span><br>
+            <span>2. What province does the <strong>golden wheat</strong> represent?</span><br>
             <select id="pq-2" style="margin-top:4px; padding:6px 10px;">
               <option value="">Select province...</option>
-              <option value="BC">British Columbia[cite: 6, 19]</option>
-              <option value="SK">Saskatchewan (SK)[cite: 6, 19]</option>
-              <option value="QC">Quebec[cite: 6, 19]</option>
+              <option value="BC">British Columbia</option>
+              <option value="SK">Saskatchewan (SK)</option>
+              <option value="QC">Quebec</option>
             </select>
             <span id="pfb-2" style="font-weight: bold; margin-left: 8px;"></span>
           </div>
@@ -696,12 +706,12 @@
         <div style="margin-bottom: 12px; display:flex; align-items:center; gap:12px;">
           <svg width="40" height="40" viewBox="0 0 48 48"><use href="#fig-nu"/></svg>
           <div>
-            <span>3. What territory does the <strong>Arctic igloo</strong> represent?[cite: 19]</span><br>
+            <span>3. What territory does the <strong>Arctic igloo</strong> represent?</span><br>
             <select id="pq-3" style="margin-top:4px; padding:6px 10px;">
               <option value="">Select territory...</option>
-              <option value="NU">Nunavut (NU)[cite: 6, 19]</option>
-              <option value="YT">Yukon (YT)[cite: 6, 19]</option>
-              <option value="NT">Northwest Territories (NT)[cite: 6, 19]</option>
+              <option value="NU">Nunavut (NU)</option>
+              <option value="YT">Yukon (YT)</option>
+              <option value="NT">Northwest Territories (NT)</option>
             </select>
             <span id="pfb-3" style="font-weight: bold; margin-left: 8px;"></span>
           </div>
@@ -723,26 +733,26 @@
         <table class="printable-table">
           <thead>
             <tr>
-              <th>Box Code[cite: 6, 19]</th>
+              <th>Box Code</th>
               <th>Vector Symbol</th>
-              <th>Full Province / Territory[cite: 6]</th>
-              <th>Capital City[cite: 6]</th>
+              <th>Full Province / Territory</th>
+              <th>Capital City</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td><strong>YT</strong>[cite: 19]</td><td>Gold Nugget & Pick</td><td></td><td></td></tr>
-            <tr><td><strong>NT</strong>[cite: 19]</td><td>Faceted Diamond</td><td></td><td></td></tr>
-            <tr><td><strong>NU</strong>[cite: 19]</td><td>Arctic Igloo</td><td></td><td></td></tr>
-            <tr><td><strong>BC</strong>[cite: 19]</td><td>Rocky Mountain Peaks</td><td></td><td></td></tr>
-            <tr><td><strong>AB</strong>[cite: 19]</td><td>Western Cowboy Hat</td><td></td><td></td></tr>
-            <tr><td><strong>SK</strong>[cite: 19]</td><td>Wheat Stalks</td><td></td><td></td></tr>
-            <tr><td><strong>MB</strong>[cite: 19]</td><td>Prairie Bison</td><td></td><td></td></tr>
-            <tr><td><strong>ON</strong>[cite: 19]</td><td>CN Tower</td><td></td><td></td></tr>
-            <tr><td><strong>QC</strong>[cite: 19]</td><td>Fleur-de-lis Emblem</td><td></td><td></td></tr>
-            <tr><td><strong>NL</strong>[cite: 19]</td><td>Red & White Lighthouse</td><td></td><td></td></tr>
-            <tr><td><strong>PE</strong>[cite: 19]</td><td>Russet Potato</td><td></td><td></td></tr>
-            <tr><td><strong>NB</strong>[cite: 19]</td><td>Bay of Fundy Lobster</td><td></td><td></td></tr>
-            <tr><td><strong>NS</strong>[cite: 19]</td><td>Bluenose Sailboat</td><td></td><td></td></tr>
+            <tr><td><strong>YT</strong></td><td>Gold Nugget & Pick</td><td></td><td></td></tr>
+            <tr><td><strong>NT</strong></td><td>Faceted Diamond</td><td></td><td></td></tr>
+            <tr><td><strong>NU</strong></td><td>Arctic Igloo</td><td></td><td></td></tr>
+            <tr><td><strong>BC</strong></td><td>Rocky Mountain Peaks</td><td></td><td></td></tr>
+            <tr><td><strong>AB</strong></td><td>Western Cowboy Hat</td><td></td><td></td></tr>
+            <tr><td><strong>SK</strong></td><td>Wheat Stalks</td><td></td><td></td></tr>
+            <tr><td><strong>MB</strong></td><td>Prairie Bison</td><td></td><td></td></tr>
+            <tr><td><strong>ON</strong></td><td>CN Tower</td><td></td><td></td></tr>
+            <tr><td><strong>QC</strong></td><td>Fleur-de-lis Emblem</td><td></td><td></td></tr>
+            <tr><td><strong>NL</strong></td><td>Red & White Lighthouse</td><td></td><td></td></tr>
+            <tr><td><strong>PE</strong></td><td>Russet Potato</td><td></td><td></td></tr>
+            <tr><td><strong>NB</strong></td><td>Bay of Fundy Lobster</td><td></td><td></td></tr>
+            <tr><td><strong>NS</strong></td><td>Bluenose Sailboat</td><td></td><td></td></tr>
           </tbody>
         </table>
       </div>

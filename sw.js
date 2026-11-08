@@ -6,7 +6,7 @@
  *   assets   : cache-first (they are versioned by CACHE below)
  *   fonts    : stale-while-revalidate in a runtime cache (Google Fonts only)
  */
-const CACHE = 'tnq-eadcd47f65eb';
+const CACHE = 'tnq-7928e3542685';
 const RUNTIME = 'tnq-runtime-v1';
 const PRECACHE = [
   "./",

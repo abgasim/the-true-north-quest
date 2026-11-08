@@ -160,6 +160,11 @@ Feature: Mobile, layout and print
   Scenario: Touch targets
     Then every hub control is at least 44 × 44 px on a touch screen
 
+  @MOBILE-READABLE
+  Scenario: Readable text on phones
+    Given a 390 px phone screen
+    Then no visible lesson text is smaller than 12 px, because small Tailwind labels are enlarged on screens up to 640 px wide
+
   @MOBILE-VIEWPORT
   Scenario: Phone viewport
     Then every page allows pinch-zoom, and the hub fills exactly one screen with the lesson taking most of it
