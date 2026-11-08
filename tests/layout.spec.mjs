@@ -78,7 +78,7 @@ test('@MOBILE-VIEWPORT every page is zoomable, fits the screen and respects the 
     assert.match(vp, /width=device-width/, file);
     assert.doesNotMatch(vp, /user-scalable\s*=\s*(no|0)|maximum-scale\s*=\s*1(\.0)?\b/, `${file} blocks zoom`);
   }
-  await openModule(page, fileUrl('index.html'));
+  await openModule(page, fileUrl('index.html') + '#/column_ops');   // inside a lesson: one app bar
   const hub = await page.evaluate(() => ({ h: document.body.getBoundingClientRect().height, vh: window.innerHeight, frame: document.getElementById('stageFrame').getBoundingClientRect().height }));
   await ctx.close();
   assert.ok(Math.abs(hub.h - hub.vh) <= 1, 'hub fills exactly one screen (no page scroll behind the lesson)');

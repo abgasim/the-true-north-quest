@@ -44,7 +44,7 @@ test('@PWA-OFFLINE after one online visit, the hub and every lesson open with th
   for (const m of MODULES) {
     await page.goto(`${server.origin}/#/${m.id}`);
     await page.reload();
-    await page.waitForFunction((file) => document.getElementById('stageFrame').getAttribute('src') === file, m.file);
+    await page.waitForFunction((file) => document.getElementById('stageFrame').dataset.lesson === file, m.file);
     const frame = page.frameLocator('#stageFrame');
     await frame.locator('html.tnq-ready').waitFor({ timeout: 10000 });
     const libs = await page.frames().find((f) => f.url().endsWith(m.file)).evaluate(() => TNQ.libs);

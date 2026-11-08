@@ -105,6 +105,19 @@ All messages are plain objects of the form `{ tnq: 1, type: string, module?: str
   9–11 px labels to 13 px (screen only, so print is unchanged). No visible lesson text is below 12 px.
   Hub toolbar icons render at 1.2 rem on touch screens.
 
+### 4.5 App mode on phones and tablets (< 1024 px)
+
+- An empty route (`/` or `#/`) shows the **launcher**: one large tile (≥ 120 px) per registered lesson,
+  grouped by category, two columns (three from 600 px). No lesson is loaded behind it.
+- Opening a lesson hides the brand header; the stage toolbar becomes the single app bar
+  (‹ back, lesson title, print, reload) and pads for the notch.
+- Lessons are loaded with `iframe.contentWindow.location.replace()`, so they add no browser-history
+  entries. The ‹ button calls `history.back()` when the lesson was opened from the launcher, otherwise
+  it navigates to `#/`; the phone's back gesture behaves the same way.
+- On screens up to 640 px the boot runtime sets the lesson root font size to 17 px, so every
+  rem-based size (text, buttons, spacing) scales up together.
+- Desktop (≥ 1024 px) keeps the multi-pane layout; an empty route opens the first lesson.
+
 ### 4.4 Layout stability
 
 - No page may scroll horizontally at 1440, 1024, 768, 390 or 360 px.
