@@ -1,0 +1,16 @@
+{
+  "name": "the-true-north-quest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Grade 4 & 5 Canadian Social Studies and Mathematics hub (offline-first, iframe modular suite).",
+  "type": "module",
+  "scripts": {
+    "boot": "node tools/apply-boot.mjs",
+    "boot:check": "node tools/apply-boot.mjs --check",
+    "test": "node tools/apply-boot.mjs --check && node --test --test-concurrency=1 \"tests/*.spec.mjs\"",
+    "serve": "node tools/serve.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.58"
+  }
+}
